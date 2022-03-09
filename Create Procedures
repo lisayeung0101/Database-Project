@@ -1,0 +1,979 @@
+/*Create Procedure */ 
+create or replace PROCEDURE add_staff (staff_id in staff.staff_id%TYPE,
+                        f_name VARCHAR2,
+                        l_name VARCHAR2,
+                        sex VARCHAR2,
+                        DOB VARCHAR2,
+                        race VARCHAR2,
+                        address VARCHAR2,
+                        position VARCHAR2,
+                        salary NUMBER,
+                        managerid VARCHAR2)
+AS
+
+ BEGIN 
+    INSERT INTO staff 
+    --(staff_id, first_name, last_name, sex, dob, race, address, position, salary) 
+    VALUES (staff_id, f_name, l_name, sex, TO_DATE(DOB, 'MM-DD-YYYY'), race, address, position, null,TO_NUMBER(salary),0,managerid);
+    DBMS_OUTPUT.NEW_LINE;
+    DBMS_OUTPUT.PUT('Staff Successfully created!');
+    DBMS_OUTPUT.NEW_LINE;
+ END;
+ / 
+
+create or replace PROCEDURE buy_coolers
+AS
+ BEGIN 
+
+    INSERT INTO COOLERS
+    VALUES(cooler_id_seq.NEXTVAL,'N');
+    DBMS_OUTPUT.NEW_LINE;
+    DBMS_OUTPUT.PUT('Water Cooler purchased successfully!');
+    DBMS_OUTPUT.NEW_LINE;
+ END;
+ /
+
+create or replace PROCEDURE buy_inventory (v_item_name VARCHAR2,
+                        item_desc VARCHAR2,
+                        qty NUMBER,
+                        cost_each NUMBER,
+                        price_each NUMBER)
+AS
+    rowcount NUMBER;
+ BEGIN 
+    select count(*) into rowcount 
+    from inventory where UPPER(item_name) = UPPER(v_item_name);
+
+    IF rowcount = 0 THEN
+        INSERT INTO INVENTORY VALUES (inv_id_seq.NEXTVAL, v_item_name, item_desc, qty, cost_each, price_each);
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('Inventory Successfully purchased');
+        DBMS_OUTPUT.NEW_LINE;
+    ELSE
+        UPDATE inventory
+        SET quantity = quantity + qty, cost_each = cost_each, price_each = price_each, item_description = item_desc
+        WHERE UPPER(item_name) = UPPER(v_item_name);
+    END IF;
+ END;
+/
+
+create or replace PROCEDURE cal_referred_count(
+       v_customer_id in customers.customer_id%TYPE)
+AS
+total NUMBER;
+BEGIN
+select count(*) into total from customers
+where customers.referring_customer_id = v_customer_id;
+update billing set referred_count = total where customers_customer_id = v_customer_id;
+update billing set total_discount = total_discount + total*25 where customers_customer_id = v_customer_id;
+END;
+/
+
+
+CREATE OR REPLACE PROCEDURE place_order (cust_name VARCHAR2,
+                        staff_name VARCHAR2,
+                        item_n VARCHAR2,
+                        qty NUMBER,
+                        order_t VARCHAR2)
+AS
+    cust_id NUMBER;
+    s_id NUMBER;
+    item NUMBER;
+    curr_date DATE;
+    o_id NUMBER;
+    p_each NUMBER;
+ BEGIN 
+    
+    SELECT customer_id into cust_id from customers where upper(customer_name) = cust_name;
+    SELECT staff_id into s_id from staff where upper(first_name) = staff_name;
+    SELECT item_id into item from inventory where upper(item_name) = item_n;
+    SELECT SYSDATE into curr_date from dual;
+    SELECT price_each into p_each from inventory where upper(item_name) = item_n;
+    o_id := order_id_seq.NEXTVAL;
+--    DBMS_OUTPUT.NEW_LINE;
+--    DBMS_OUTPUT.PUT(o_id);
+--    DBMS_OUTPUT.NEW_LINE;
+    INSERT INTO ORDERS
+    VALUES (o_id, curr_date, order_t, cust_id, s_id);
+--    DBMS_OUTPUT.NEW_LINE;
+--    DBMS_OUTPUT.PUT('here');
+--    DBMS_OUTPUT.NEW_LINE;
+    INSERT INTO ORDER_ITEMS
+    VALUES(order_item_id_seq.NEXTVAL, item_n, qty, p_each, o_id, item, 'N');
+    
+    DBMS_OUTPUT.NEW_LINE;
+    DBMS_OUTPUT.PUT('Order Successfully placed!');
+    DBMS_OUTPUT.NEW_LINE;
+ END;
+/
+
+create or replace PROCEDURE change_lead_to_client(l_id NUMBER, zip NUMBER, num_employees NUMBER, staffid NUMBER)
+AS
+    v_l_name VARCHAR2(100);
+    v_l_addr VARCHAR2(100);
+    v_l_type NUMBER(1);
+    v_l_reffering_customer NUMBER;
+    maxContract_ID NUMBER;
+    rowCount NUMBER;
+    v_staff_fname VARCHAR2(100);
+    v_staff_lname VARCHAR2(100);
+BEGIN
+    select count(*) into rowCount from leads where lead_id = l_id;
+    IF rowCount < 1 THEN
+    RAISE_APPLICATION_ERROR (-20326,'Lead ID could not be found in LEADS TABLE');
+    ELSE
+    
+    select first_name, last_name into v_staff_fname, v_staff_lname from staff where staff_id = staffid;
+    
+    
+    select max(contract_id) into maxContract_ID from contracts;
+
+    SELECT PO_CLIENT_NAME, PO_CLIENT_TYPE, PO_CLIENT_ADDRESS, CUSTOMERS_CUSTOMER_ID
+    INTO v_l_name, v_l_type, v_l_addr, v_l_reffering_customer
+    FROM leads
+    where lead_id = l_id;
+
+    INSERT INTO CUSTOMERS
+    VALUES (Customer_id_seq.NEXTVAL, v_l_name, zip, v_l_type, num_employees, v_l_addr, 'Active', v_l_reffering_customer);
+
+    DELETE FROM LEADS
+    WHERE lead_id = l_id;
+
+    INSERT INTO CONTRACTS
+    VALUES (maxContract_ID+1, SYSDATE, SYSDATE, ADD_MONTHS(SYSDATE, 12), 'Transfer', Customer_id_seq.CURRVAL, staffid,
+    v_staff_fname, v_staff_lname, v_l_name,zip);
+    END IF;
+END;
+/
+
+create or replace PROCEDURE customer_billing_report(cust_name VARCHAR2, billing_month VARCHAR2, billing_year VARCHAR2)
+AS
+    cust_id NUMBER;
+    loc NUMBER;
+    mon_fee NUMBER;
+    it_id NUMBER;
+    it_qty NUMBER;
+    it_desc VARCHAR2(100);
+    it_price NUMBER;
+    it_discount NUMBER;
+    it_total NUMBER;
+
+    addr VARCHAR2(100);
+    c_zip NUMBER;
+
+    v_bill_id NUMBER;
+    numReferred NUMBER;
+    v_tot_discount NUMBER;
+    v_amt_due NUMBER;
+    v_latefee NUMBER;
+    v_tax_perc NUMBER;
+    v_amt_paid NUMBER;
+    v_end_date DATE;
+
+    overall_total NUMBER;
+    counter NUMBER;
+
+    CURSOR c1(c_id NUMBER, bill_month VARCHAR2, bill_year VARCHAR2) IS
+    select bi.billing_zip, b.monthly_fee, bi.inventory_item_id, 
+    bi.quantity, get_item_name(bi.inventory_item_id), bi.total_price, 0, 
+    bi.quantity*bi.total_price - 0
+    from billing b
+    join billing_item bi on b.billing_id = bi.billing_billing_id
+    where b.customers_customer_id = c_id AND to_char(b.start_date, 'MON') = bill_month AND to_char(b.start_date, 'YYYY') = bill_year;
+BEGIN
+    SELECT customer_id, delivery_address, zip_code into cust_id, addr, c_zip 
+    FROM customers where UPPER(customer_name) = cust_name;
+    
+    select count(*) into counter
+    from billing b
+    join billing_item bi on b.billing_id = bi.billing_billing_id
+    where b.customers_customer_id = cust_id AND to_char(b.start_date, 'MON') = billing_month AND to_char(b.start_date, 'YYYY') = billing_year;
+    
+    IF counter > 0 THEN
+    
+        overall_total := 0;
+    
+        OPEN c1(cust_id, billing_month, billing_year);
+    
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('********** BILLING REPORT ************');
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('Customer Account ID: ' || cust_id);
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('Customer Address: ' || addr);
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('Customer Zip Code: ' || c_zip);
+        DBMS_OUTPUT.NEW_LINE;
+    --    DBMS_OUTPUT.PUT('Location: ' || c_zip);
+    --    DBMS_OUTPUT.NEW_LINE;
+    --    DBMS_OUTPUT.PUT('Monthly Fee: ' || c_zip);
+    --    DBMS_OUTPUT.NEW_LINE;
+    
+        select billing_id, referred_count, total_discount, billing_amount - amount_paid, late_fee, tax, amount_paid, end_date 
+        into v_bill_id, numReferred, v_tot_discount, v_amt_due, v_latefee, v_tax_perc, v_amt_paid, v_end_date
+        from billing b
+        where b.customers_customer_id = cust_id AND to_char(b.start_date, 'MON') = billing_month AND to_char(b.start_date, 'YYYY') = billing_year;
+    
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT(RPAD('Location:', 15, ' ') || RPAD('Monthly Fee:', 15, ' ') || RPAD('ItemID:', 15, ' ') || RPAD('Qty:', 15, ' ') || RPAD('Description:', 25, ' ') || RPAD('Price:', 15, ' ') || RPAD('Discount:', 15, ' ') || RPAD('Total:', 15, ' '));
+    
+        LOOP
+            FETCH c1 into loc, mon_fee, it_id, it_qty, it_desc, it_price, it_discount, it_total;
+            EXIT WHEN c1%NOTFOUND;
+            overall_total := overall_total + it_total;
+            DBMS_OUTPUT.NEW_LINE;
+            DBMS_OUTPUT.PUT(RPAD(loc, 15, ' ') || RPAD(mon_fee, 15, ' ') || RPAD(it_id, 15, ' ') || RPAD(it_qty, 15, ' ') || RPAD(it_desc, 25, ' ') || RPAD(it_price, 15, ' ') || RPAD(it_discount, 15, ' ') || RPAD(it_total, 15, ' '));
+            DBMS_OUTPUT.NEW_LINE;
+    
+        END LOOP;
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('Total Monthly Fee: ' || RPAD(mon_fee, 85, ' ') || RPAD('Total: ', 10, ' ') || overall_total);
+        DBMS_OUTPUT.NEW_LINE;
+    
+        DBMS_OUTPUT.PUT('Number of Referrals: ' || numReferred);
+        DBMS_OUTPUT.NEW_LINE;
+    
+        DBMS_OUTPUT.PUT(LPAD('Total Charges: ', 60, ' ') || TO_CHAR(mon_fee + overall_total));
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT(LPAD('Discount: ', 60, ' ') || TO_CHAR(v_tot_discount));
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT(LPAD('Tax Percentage: ', 60, ' ') || TO_CHAR(v_tax_perc) || '%');
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT(LPAD('Tax Amount: ', 60, ' ') || TO_CHAR(v_tax_perc*(mon_fee + overall_total - v_tot_discount)/100));
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT(LPAD('Amount Due: ', 60, ' ') || TO_CHAR(v_amt_due));
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT(LPAD('Amount Paid: ', 60, ' ') || TO_CHAR(v_amt_paid));
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT(LPAD('Late Fee: ', 60, ' ') || TO_CHAR(v_latefee));
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT(LPAD('Total Bill: ', 60, ' ') || TO_CHAR(mon_fee + overall_total - v_tot_discount + v_tax_perc*(mon_fee + overall_total - v_tot_discount)/100 + v_latefee));
+        DBMS_OUTPUT.PUT(LPAD('Due Date: ', 30, ' ') || v_end_date);
+        DBMS_OUTPUT.NEW_LINE;
+    
+        CLOSE c1;
+    ELSE
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('No bill for mentioned month and year!');
+        DBMS_OUTPUT.NEW_LINE;
+    END IF;
+END;
+/
+
+create or replace PROCEDURE see_employee_evaluation_report(emp_id NUMBER, month VARCHAR2, year VARCHAR2)
+AS
+--    emp_id NUMBER;
+    weekNumber NUMBER;
+    st_id NUMBER;
+    emp_first VARCHAR2(40);
+    numLeads NUMBER;
+    numDeliveries NUMBER;
+    addr VARCHAR2(100);
+    mgr_name VARCHAR2(100);
+    mgr_id NUMBER;
+    e_date DATE;
+    ad_sales NUMBER;
+    l_eval NUMBER;
+    s_eval NUMBER;
+    d_eval NUMBER;
+
+    sum_del NUMBER;
+    sum_leads NUMBER;
+    sum_sales NUMBER;
+    sum_eval1 NUMBER;
+    sum_eval2 NUMBER;
+    sum_eval3 NUMBER;
+
+    eval1_w NUMBER;
+    eval2_w NUMBER;
+    eval3_w NUMBER;
+    
+    emp_name VARCHAR2(100);
+
+    v_pos VARCHAR2(40);
+    
+    CURSOR c1(s_id VARCHAR2, m VARCHAR2, y VARCHAR2) IS 
+        select to_char(d.delivery_date, 'WW') AS weeknum, s.staff_id, s.first_name, 
+        COUNT(distinct l.lead_id), calc_leads_eval(COUNT(distinct l.lead_id)), 
+        COUNT(distinct d.delivery_id), calc_delivery_eval(COUNT(distinct l.lead_id)), 
+        NVL2(sum(oi.quantity*oi.paideach), sum(oi.quantity*oi.paideach), 0) as amt,
+        calc_sales_eval(NVL2(sum(oi.quantity*oi.paideach), sum(oi.quantity*oi.paideach), 0))
+        from staff s
+        join leads l on s.staff_id = l.staff_staff_id
+        join delivery d on s.staff_id = d.staff_staff_id and d.customers_customer_id = l.customers_customer_id
+        left join orders o ON o.order_id = d.orders_order_id
+        left join order_items oi on o.order_id = oi.orders_order_id
+        where s.position = 'Delivery' AND s.staff_id = s_id AND TO_CHAR(d.delivery_date, 'MON') = m
+        AND TO_CHAR(d.delivery_date, 'YYYY') = y
+        GROUP BY to_char(d.delivery_date, 'WW'), s.staff_id, s.first_name;
+BEGIN
+    SELECT first_name, address, position into emp_name, addr, v_pos 
+    FROM staff where staff_id = emp_id;
+        
+    
+    IF upper(v_pos) = 'DELIVERY' THEN
+    
+        SELECT manager_id into mgr_id
+        FROM staff where staff_id = emp_id;
+    
+        SELECT first_name into mgr_name 
+        FROM staff WHERE staff_id = mgr_id;
+    
+    
+        OPEN c1(emp_id, month, year);
+    
+        sum_del := 0;
+        sum_leads := 0;
+        sum_sales := 0;
+        sum_eval1 := 0;
+        sum_eval2 := 0;
+        sum_eval3 := 0;
+    
+        eval1_w := 2;
+        eval2_w := 5;
+        eval3_w := 4;
+    
+        DBMS_OUTPUT.NEW_LINE;
+            DBMS_OUTPUT.PUT('***********EMPLOYEE EVALUATION REPORT*************');
+            DBMS_OUTPUT.NEW_LINE;
+            DBMS_OUTPUT.PUT('Evaluation Date: ' || SYSDATE);
+            DBMS_OUTPUT.NEW_LINE;
+            DBMS_OUTPUT.PUT('Manager: ' || mgr_name);
+            DBMS_OUTPUT.NEW_LINE;
+            DBMS_OUTPUT.NEW_LINE;
+            DBMS_OUTPUT.PUT('Employee: ' || emp_name);
+            DBMS_OUTPUT.NEW_LINE;
+            DBMS_OUTPUT.PUT('Home Phone: ' || 'NOT LISTED');
+            DBMS_OUTPUT.NEW_LINE;
+            DBMS_OUTPUT.PUT('Address: ' || addr);
+            DBMS_OUTPUT.NEW_LINE;
+            DBMS_OUTPUT.NEW_LINE;
+    
+            DBMS_OUTPUT.PUT('Week#     #Deliveries      Eval-1       Sales       Eval-2       #Leads       Eval-3');
+        LOOP
+            FETCH c1 INTO weekNumber, st_id, emp_first, numLeads, l_eval, numDeliveries, d_eval, ad_sales, s_eval;
+            EXIT WHEN c1%NOTFOUND;
+    
+    
+                DBMS_OUTPUT.NEW_LINE;
+                DBMS_OUTPUT.PUT(weeknumber || '          ' || numDeliveries || '               ' || d_eval || '             ' || ad_sales || '          ' || s_eval || '              ' || numLeads || '              ' || l_eval);
+                DBMS_OUTPUT.NEW_LINE;
+                -- END LOOP
+    
+                DBMS_OUTPUT.PUT('   --------------------------------------------------------------------------');
+            sum_del := sum_del + numDeliveries;
+            sum_leads := sum_leads + numLeads;
+            sum_sales := sum_sales + ad_sales;
+            sum_eval1 := sum_eval1 + d_eval;
+            sum_eval2 := sum_eval2 + s_eval;
+            sum_eval3 := sum_eval3 + l_eval;
+        END LOOP;
+        CLOSE c1;
+    
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('TOTALS: ' || '    ' || sum_del || '               ' || sum_eval1 || '             ' || sum_sales || '          ' || sum_eval2 || '              ' || sum_leads || '              ' || sum_eval3);
+        DBMS_OUTPUT.NEW_LINE;
+    
+        DBMS_OUTPUT.PUT('Evaluation Weights:         ' || eval1_w || '             ' || '' || '           ' || eval2_w || '              ' || '' || '                ' || eval3_w);
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('Total Evaluation:         ' || sum_eval1*eval1_w || '             ' || '' || '           ' || sum_eval2*eval2_w || '              ' || '' || '                ' || sum_eval3*eval3_w);
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('Final Evaluation: ' || TO_CHAR(sum_eval1*eval1_w + sum_eval2*eval2_w + sum_eval3*eval3_w));
+        DBMS_OUTPUT.NEW_LINE;
+    ELSE
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('The mentioned employee is not a delivery person!');
+        DBMS_OUTPUT.NEW_LINE;
+    END IF;
+    -- new stuff below
+--    INSERT INTO emp_evaluation
+--    VALUES (eval_id_seq.NEXTVAL, emp_id, mgr_id, SYSDATE, sum_del, sum_eval1, sum_sales, sum_eval2, sum_leads, sum_eval3, sum_eval1*eval1_w + sum_eval2*eval2_w + sum_eval3*eval3_w);
+
+
+END;
+/
+
+create or replace PROCEDURE write_employee_evaluation_report(emp_id NUMBER, month VARCHAR2, year VARCHAR2, v_comments VARCHAR2)
+AS
+--    emp_id NUMBER;
+    weekNumber NUMBER;
+    st_id NUMBER;
+    emp_first VARCHAR2(40);
+    numLeads NUMBER;
+    numDeliveries NUMBER;
+    addr VARCHAR2(100);
+    mgr_name VARCHAR2(100);
+    mgr_id NUMBER;
+    e_date DATE;
+    ad_sales NUMBER;
+    l_eval NUMBER;
+    s_eval NUMBER;
+    d_eval NUMBER;
+
+    sum_del NUMBER;
+    sum_leads NUMBER;
+    sum_sales NUMBER;
+    sum_eval1 NUMBER;
+    sum_eval2 NUMBER;
+    sum_eval3 NUMBER;
+
+    eval1_w NUMBER;
+    eval2_w NUMBER;
+    eval3_w NUMBER;
+    v_pos VARCHAR2(40);
+    
+    emp_name VARCHAR2(40);
+
+    CURSOR c1(s_id VARCHAR2, m VARCHAR2, y VARCHAR2) IS 
+        select to_char(d.delivery_date, 'WW') AS weeknum, s.staff_id, s.first_name, 
+        COUNT(distinct l.lead_id), calc_leads_eval(COUNT(distinct l.lead_id)), 
+        COUNT(distinct d.delivery_id), calc_delivery_eval(COUNT(distinct l.lead_id)), 
+        NVL2(sum(oi.quantity*oi.paideach), sum(oi.quantity*oi.paideach), 0) as amt,
+        calc_sales_eval(NVL2(sum(oi.quantity*oi.paideach), sum(oi.quantity*oi.paideach), 0))
+        from staff s
+        join leads l on s.staff_id = l.staff_staff_id
+        join delivery d on s.staff_id = d.staff_staff_id and d.customers_customer_id = l.customers_customer_id
+        left join orders o ON o.order_id = d.orders_order_id
+        left join order_items oi on o.order_id = oi.orders_order_id
+        where s.position = 'Delivery' AND s.staff_id = s_id AND TO_CHAR(d.delivery_date, 'MON') = m AND TO_CHAR(d.delivery_date, 'YYYY') = y
+        GROUP BY to_char(d.delivery_date, 'WW'), s.staff_id, s.first_name;
+BEGIN
+    SELECT first_name, address, position into emp_name, addr, v_pos 
+    FROM staff where staff_id = emp_id;
+    
+    IF upper(v_pos) = 'DELIVERY' THEN
+        SELECT manager_id into mgr_id
+        FROM staff where staff_id = emp_id;
+    
+        SELECT first_name into mgr_name 
+        FROM staff WHERE staff_id = mgr_id;
+    
+        OPEN c1(emp_id, month, year);
+    
+        sum_del := 0;
+        sum_leads := 0;
+        sum_sales := 0;
+        sum_eval1 := 0;
+        sum_eval2 := 0;
+        sum_eval3 := 0;
+    
+        eval1_w := 2;
+        eval2_w := 5;
+        eval3_w := 4;
+    
+    --    DBMS_OUTPUT.NEW_LINE;
+    --        DBMS_OUTPUT.PUT('***********EMPLOYEE EVALUATION REPORT*************');
+    --        DBMS_OUTPUT.NEW_LINE;
+    --        DBMS_OUTPUT.PUT('Evaluation Date: ' || SYSDATE);
+    --        DBMS_OUTPUT.NEW_LINE;
+    --        DBMS_OUTPUT.PUT('Manager: ' || mgr_name);
+    --        DBMS_OUTPUT.NEW_LINE;
+    --        DBMS_OUTPUT.NEW_LINE;
+    --        DBMS_OUTPUT.PUT('Employee: ' || emp_first_name);
+    --        DBMS_OUTPUT.NEW_LINE;
+    --        DBMS_OUTPUT.PUT('Home Phone: ' || 'NOT LISTED');
+    --        DBMS_OUTPUT.NEW_LINE;
+    --        DBMS_OUTPUT.PUT('Address: ' || addr);
+    --        DBMS_OUTPUT.NEW_LINE;
+    --        DBMS_OUTPUT.NEW_LINE;
+    --
+    --        DBMS_OUTPUT.PUT('Week#     #Deliveries      Eval-1       Sales       Eval-2       #Leads       Eval-3');
+        LOOP
+            FETCH c1 INTO weekNumber, st_id, emp_first, numLeads, l_eval, numDeliveries, d_eval, ad_sales, s_eval;
+            EXIT WHEN c1%NOTFOUND;
+    
+    
+    --            DBMS_OUTPUT.NEW_LINE;
+    --            DBMS_OUTPUT.PUT(weeknumber || '          ' || numDeliveries || '               ' || d_eval || '             ' || ad_sales || '          ' || s_eval || '              ' || numLeads || '              ' || l_eval);
+    --            DBMS_OUTPUT.NEW_LINE;
+                -- END LOOP
+    
+                DBMS_OUTPUT.PUT('   --------------------------------------------------------------------------');
+            sum_del := sum_del + numDeliveries;
+            sum_leads := sum_leads + numLeads;
+            sum_sales := sum_sales + ad_sales;
+            sum_eval1 := sum_eval1 + d_eval;
+            sum_eval2 := sum_eval2 + s_eval;
+            sum_eval3 := sum_eval3 + l_eval;
+        END LOOP;
+        CLOSE c1;
+    
+    --    DBMS_OUTPUT.NEW_LINE;
+    --    DBMS_OUTPUT.NEW_LINE;
+    --    DBMS_OUTPUT.PUT('TOTALS: ' || '    ' || sum_del || '               ' || sum_eval1 || '             ' || sum_sales || '          ' || sum_eval2 || '              ' || sum_leads || '              ' || sum_eval3);
+    --    DBMS_OUTPUT.NEW_LINE;
+    
+    --    DBMS_OUTPUT.PUT('Evaluation Weights:         ' || eval1_w || '             ' || '' || '           ' || eval2_w || '              ' || '' || '                ' || eval3_w);
+    --    DBMS_OUTPUT.NEW_LINE;
+    --    DBMS_OUTPUT.PUT('Total Evaluation:         ' || sum_eval1*eval1_w || '             ' || '' || '           ' || sum_eval2*eval2_w || '              ' || '' || '                ' || sum_eval3*eval3_w);
+    --    DBMS_OUTPUT.NEW_LINE;
+    --    DBMS_OUTPUT.PUT('Final Evaluation: ' || TO_CHAR(sum_eval1*eval1_w + sum_eval2*eval2_w + sum_eval3*eval3_w));
+    --    DBMS_OUTPUT.NEW_LINE;
+    
+        -- new stuff below
+        INSERT INTO emp_evaluation
+        VALUES (eval_id_seq.NEXTVAL, emp_id, mgr_id, SYSDATE, sum_del, sum_eval1, sum_sales, sum_eval2, sum_leads, sum_eval3, sum_eval1*eval1_w + sum_eval2*eval2_w + sum_eval3*eval3_w, v_comments);
+    ELSE
+    DBMS_OUTPUT.NEW_LINE;
+    DBMS_OUTPUT.PUT('The mentioned employee is not a delivery person!');
+    DBMS_OUTPUT.NEW_LINE;
+    END IF;
+
+END;
+/
+
+
+
+create or replace PROCEDURE get_unpaid_bills(month VARCHAR2, year VARCHAR2)
+AS
+    bill_amount NUMBER;
+    diff NUMBER;
+    amt_paid NUMBER;
+    cust_name VARCHAR2(40);
+    addr VARCHAR2(40);
+    counter NUMBER;
+    CURSOR c1(mon VARCHAR2, y VARCHAR2) IS 
+        SELECT c.customer_name, billing_amount, amount_paid, billing_amount - amount_paid, delivery_address
+        FROM billing b
+        JOIN customers c ON b.customers_customer_id = c.customer_id
+        WHERE b.amount_paid < b.billing_amount AND TO_CHAR(b.start_date, 'MON') = mon AND TO_CHAR(b.start_date, 'YYYY') = y;
+BEGIN
+    
+    SELECT count(*) into counter
+        FROM billing b
+        JOIN customers c ON b.customers_customer_id = c.customer_id
+        WHERE b.amount_paid < b.billing_amount AND TO_CHAR(b.start_date, 'MON') = month AND TO_CHAR(b.start_date, 'YYYY') = year;
+    IF counter = 0 THEN
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('No unpaid bills to show for month and year mentioned!');
+        DBMS_OUTPUT.NEW_LINE;
+    ELSE
+        OPEN c1(month, year);
+        LOOP
+            FETCH c1 INTO cust_name, bill_amount, amt_paid, diff, addr;
+            EXIT WHEN c1%NOTFOUND;
+    
+                DBMS_OUTPUT.NEW_LINE;
+                DBMS_OUTPUT.PUT('Customer Name: ' || cust_name);
+                DBMS_OUTPUT.NEW_LINE;
+                DBMS_OUTPUT.PUT('Bill Amount: ' || bill_amount);
+                DBMS_OUTPUT.NEW_LINE;
+                DBMS_OUTPUT.PUT('Amount Paid Already: ' || amt_paid);
+                DBMS_OUTPUT.NEW_LINE;
+                DBMS_OUTPUT.PUT('Amount to be paid: ' || diff);
+                DBMS_OUTPUT.NEW_LINE;
+                DBMS_OUTPUT.PUT('Contact Information: ' || addr);
+                DBMS_OUTPUT.NEW_LINE;
+                DBMS_OUTPUT.PUT('******************************************');
+    
+        END LOOP;
+        CLOSE c1;
+    END IF;
+
+END;
+/
+
+create or replace PROCEDURE generate_bill_curr_month(cust_id NUMBER, v_s_id NUMBER)
+AS
+    billcount NUMBER;
+    v_order_row ORDERS%ROWTYPE;
+    v_orderitems_row ORDER_ITEMS%ROWTYPE;
+    tot_amount NUMBER;
+    b_id NUMBER;
+    status VARCHAR2(40);
+
+    CURSOR c1(c_id NUMBER) IS
+    SELECT * 
+    FROM ORDERS WHERE customers_customer_id = c_id
+    AND TO_CHAR(order_date, 'MON') = TO_CHAR(SYSDATE, 'MON');
+
+    CURSOR c2(o_id NUMBER) IS
+    SELECT * 
+    FROM ORDER_ITEMS WHERE orders_order_id = o_id;
+BEGIN
+    select count(*) into billcount
+    from billing where customers_customer_id = cust_id
+                   and TO_CHAR(sysdate, 'MON') = TO_CHAR(start_date, 'MON');
+    SELECT upper(position) into status
+    FROM staff where staff_id = v_s_id;
+
+    IF status = 'ACCOUNTING' THEN
+
+        IF billcount > 0 THEN
+            DBMS_OUTPUT.NEW_LINE;
+            DBMS_OUTPUT.PUT('Bill has already been sent!');
+            DBMS_OUTPUT.NEW_LINE;
+        ELSE
+            OPEN c1(cust_id);
+            select bill_id_seq.NEXTVAL into b_id from dual;
+            DBMS_OUTPUT.NEW_LINE;
+            DBMS_OUTPUT.PUT(v_order_row.order_id);
+            DBMS_OUTPUT.NEW_LINE;
+            tot_amount := 0;
+            -- getreferredcount for customer function
+            INSERT INTO billing
+            VALUES (b_id, 300, 0, SYSDATE, ADD_MONTHS(SYSDATE, 1), 0, 0, 0, 25*0, 15, v_s_id, cust_id);
+
+            LOOP
+                FETCH c1 into v_order_row;
+                EXIT WHEN c1%NOTFOUND;
+
+                OPEN c2(v_order_row.order_id);
+                LOOP
+                    FETCH c2 into v_orderitems_row;
+                    EXIT WHEN c2%NOTFOUND;
+                    DBMS_OUTPUT.NEW_LINE;
+                    DBMS_OUTPUT.PUT(v_orderitems_row.orderitem_id);
+                    DBMS_OUTPUT.NEW_LINE;
+
+                    INSERT INTO billing_item
+                    VALUES (billitem_id_seq.NEXTVAL, v_orderitems_row.quantity, v_orderitems_row.paideach, 15281, 'Automated', b_id, v_orderitems_row.inventory_item_id);
+
+                    tot_amount := tot_amount + v_orderitems_row.quantity*v_orderitems_row.paideach;
+                END LOOP;
+                CLOSE c2;
+            END LOOP;
+            UPDATE billing
+            SET billing_amount = tot_amount
+            WHERE billing_id = b_id;
+            CLOSE c1;
+        END IF;
+    ELSE
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('Staff ID entered is not a persor responsible for accounting. They cannot send bills!');
+        DBMS_OUTPUT.NEW_LINE;
+    END IF;
+END;
+/
+
+create or replace PROCEDURE pay_bill(cust_name VARCHAR2, amount NUMBER, b_date DATE)
+AS
+    cust_id NUMBER;
+    already_paid_amount NUMBER;
+BEGIN
+    SELECT customer_id into cust_id FROM customers WHERE UPPER(customer_name) = cust_name;
+    SELECT amount_paid into already_paid_amount FROM billing 
+        WHERE customers_customer_id = cust_id AND b_date BETWEEN start_date AND end_date;
+    UPDATE billing 
+    SET amount_paid = already_paid_amount + amount
+    WHERE customers_customer_id = cust_id AND b_date BETWEEN start_date AND end_date;
+
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('Thank you : ' || cust_name || ' for paying an amount of = ' || amount);
+        DBMS_OUTPUT.NEW_LINE;
+
+END;
+/
+
+
+create or replace PROCEDURE Create_customer (
+	   p_name IN Customers.Customer_Name%TYPE,
+	   p_zipcode IN Customers.ZIP_CODE%TYPE,
+       p_org_type IN Customers.ORG_TYPE%TYPE,
+       p_num_emps  IN Customers.NUM_EMPS%TYPE,
+       p_delivery_address  IN Customers.DELIVERY_ADDRESS%TYPE,
+       p_referring_cust_ID IN Customers.REFERRING_CUSTOMER_ID%Type )
+IS
+BEGIN
+  INSERT INTO CUSTOMERS
+   VALUES (Customer_id_seq.nextval, p_name, p_zipcode,p_org_type,p_num_emps,p_delivery_address,'Active', p_referring_cust_ID);
+  COMMIT;
+END;
+/ 
+
+
+
+CREATE OR REPLACE PROCEDURE customer_billing_report(cust_name VARCHAR2, billing_month VARCHAR2, billing_year VARCHAR2)
+AS
+    cust_id NUMBER;
+    loc NUMBER;
+    mon_fee NUMBER;
+    it_id NUMBER;
+    it_qty NUMBER;
+    it_desc VARCHAR2(100);
+    it_price NUMBER;
+    it_discount NUMBER;
+    it_total NUMBER;
+    
+    addr VARCHAR2(100);
+    c_zip NUMBER;
+    
+    v_bill_id NUMBER;
+    numReferred NUMBER;
+    v_tot_discount NUMBER;
+    v_amt_due NUMBER;
+    v_latefee NUMBER;
+    v_tax_perc NUMBER;
+    v_amt_paid NUMBER;
+    v_end_date DATE;
+    
+    overall_total NUMBER;
+    counterr NUMBER;
+    
+    CURSOR c1(c_id NUMBER, bill_month VARCHAR2, bill_year VARCHAR2) IS
+    select bi.billing_zip, b.monthly_fee, bi.inventory_item_id, 
+    bi.quantity, get_item_name(bi.inventory_item_id), bi.total_price, 0, 
+    bi.quantity*bi.total_price - 0
+    from billing b
+    join billing_item bi on b.billing_id = bi.billing_billing_id
+    where b.customers_customer_id = c_id AND to_char(b.start_date, 'MON') = bill_month and to_char(b.start_date, 'YYYY') = bill_year;
+BEGIN
+
+    SELECT customer_id, delivery_address, zip_code into cust_id, addr, c_zip 
+    FROM customers where UPPER(customer_name) = cust_name;
+    
+    select count(*) into counterr
+    from billing b
+    join billing_item bi on b.billing_id = bi.billing_billing_id
+    where b.customers_customer_id = cust_id AND to_char(b.start_date, 'MON') = billing_month and to_char(b.start_date, 'YYYY') = billing_year;
+    
+    IF counterr = 0 THEN
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('No billing for mentioned month');
+        DBMS_OUTPUT.NEW_LINE;
+    ELSE
+    
+        overall_total := 0;
+        
+        OPEN c1(cust_id, billing_month, billing_year);
+        
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('********** BILLING REPORT ************');
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('Customer Account ID: ' || cust_id);
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('Customer Address: ' || addr);
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('Customer Zip Code: ' || c_zip);
+        DBMS_OUTPUT.NEW_LINE;
+    --    DBMS_OUTPUT.PUT('Location: ' || c_zip);
+    --    DBMS_OUTPUT.NEW_LINE;
+    --    DBMS_OUTPUT.PUT('Monthly Fee: ' || c_zip);
+    --    DBMS_OUTPUT.NEW_LINE;
+        
+        select billing_id, referred_count, total_discount, billing_amount - amount_paid, late_fee, tax, amount_paid, end_date 
+        into v_bill_id, numReferred, v_tot_discount, v_amt_due, v_latefee, v_tax_perc, v_amt_paid, v_end_date
+        from billing b
+        where b.customers_customer_id = cust_id AND to_char(b.start_date, 'MON') = billing_month AND to_char(b.start_date, 'YYYY') = billing_year;
+        
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT(RPAD('Location:', 15, ' ') || RPAD('Monthly Fee:', 15, ' ') || RPAD('ItemID:', 15, ' ') || RPAD('Qty:', 15, ' ') || RPAD('Description:', 25, ' ') || RPAD('Price:', 15, ' ') || RPAD('Discount:', 15, ' ') || RPAD('Total:', 15, ' '));
+            
+        LOOP
+            FETCH c1 into loc, mon_fee, it_id, it_qty, it_desc, it_price, it_discount, it_total;
+            EXIT WHEN c1%NOTFOUND;
+            overall_total := overall_total + it_total;
+            DBMS_OUTPUT.NEW_LINE;
+            DBMS_OUTPUT.PUT(RPAD(loc, 15, ' ') || RPAD(mon_fee, 15, ' ') || RPAD(it_id, 15, ' ') || RPAD(it_qty, 15, ' ') || RPAD(it_desc, 25, ' ') || RPAD(it_price, 15, ' ') || RPAD(it_discount, 15, ' ') || RPAD(it_total, 15, ' '));
+            DBMS_OUTPUT.NEW_LINE;
+            
+        END LOOP;
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('Total Monthly Fee: ' || RPAD(mon_fee, 85, ' ') || RPAD('Total: ', 10, ' ') || overall_total);
+        DBMS_OUTPUT.NEW_LINE;
+        
+        DBMS_OUTPUT.PUT('Number of Referrals: ' || numReferred);
+        DBMS_OUTPUT.NEW_LINE;
+        
+        DBMS_OUTPUT.PUT(LPAD('Total Charges: ', 60, ' ') || TO_CHAR(mon_fee + overall_total));
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT(LPAD('Discount: ', 60, ' ') || TO_CHAR(v_tot_discount));
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT(LPAD('Tax Percentage: ', 60, ' ') || TO_CHAR(v_tax_perc) || '%');
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT(LPAD('Tax Amount: ', 60, ' ') || TO_CHAR(v_tax_perc*(mon_fee + overall_total - v_tot_discount)/100));
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT(LPAD('Amount Due: ', 60, ' ') || TO_CHAR(v_amt_due));
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT(LPAD('Amount Paid: ', 60, ' ') || TO_CHAR(v_amt_paid));
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT(LPAD('Late Fee: ', 60, ' ') || TO_CHAR(v_latefee));
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT(LPAD('Total Bill: ', 60, ' ') || TO_CHAR(mon_fee + overall_total - v_tot_discount + v_tax_perc*(mon_fee + overall_total - v_tot_discount)/100 + v_latefee));
+        DBMS_OUTPUT.PUT(LPAD('Due Date: ', 30, ' ') || v_end_date);
+        DBMS_OUTPUT.NEW_LINE;
+        
+        CLOSE c1;
+    END IF;   
+END;
+/
+
+create or replace PROCEDURE display_message (message VARCHAR2) IS
+BEGIN
+DBMS_OUTPUT.NEW_LINE;
+DBMS_OUTPUT.PUT_LINE(message);
+DBMS_OUTPUT.NEW_LINE;
+END;
+/
+
+
+create or replace PROCEDURE rent_water_cooler(cust_name VARCHAR2, rental_dep NUMBER)
+AS
+    curr_date DATE;
+    cool_id NUMBER;
+    r_price NUMBER;
+    cust_id NUMBER;
+    waived VARCHAR2(5);
+    v_rental_dep NUMBER;
+    v_org_type NUMBER;
+    available_cooler_count NUMBER;
+    NO_COOLER_EXC EXCEPTION;
+
+ BEGIN 
+    select COUNT(*) into available_cooler_count 
+    from coolers c
+    where rental_status = 'N';
+
+    IF available_cooler_count = 0 THEN
+    RAISE NO_COOLER_EXC;
+    ELSE
+        select c.cooler_id into cool_id 
+        from coolers c
+        where rental_status = 'N'
+        FETCH FIRST ROW ONLY;
+
+        select sysdate into curr_date from dual;
+        select customer_id, org_type into cust_id, v_org_type from customers where upper(customer_name) = upper(cust_name);
+        -- rental end date should come from contract end date?
+        IF (v_org_type < 5) THEN
+        waived := 'NO';
+        v_rental_dep := rental_dep;
+        ELSE
+        waived := 'YES';
+        v_rental_dep := 0;
+        END IF;
+
+        insert into rentals
+        values(rental_id_seq.nextval, curr_date, add_months(curr_date, 12), v_rental_dep, waived, cust_id, cool_id);
+        COMMIT;
+
+
+        UPDATE COOLERS 
+        SET RENTAL_STATUS = 'Y'
+        WHERE COOLER_ID = cool_id;
+        COMMIT;
+
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('Water Cooler rented successfully!');
+        DBMS_OUTPUT.NEW_LINE;
+    END IF;
+    EXCEPTION WHEN
+        NO_COOLER_EXC THEN
+            DBMS_OUTPUT.NEW_LINE;
+            DBMS_OUTPUT.PUT('No water coolers available!');
+            DBMS_OUTPUT.NEW_LINE;
+ END;
+/
+
+
+
+
+create or replace PROCEDURE stop_rental(cust_name VARCHAR2)
+AS
+    cust_id NUMBER;
+    curr_date DATE;
+    cool_id NUMBER;
+    cursor c1(c_id NUMBER) IS select coolers_cooler_id from rentals where customers_customer_id = c_id;
+ BEGIN 
+    select customer_id into cust_id from customers where upper(customer_name) = upper(cust_name);
+    select sysdate into curr_date from dual;
+    UPDATE rentals set end_date = curr_date where customers_customer_id = cust_id;
+    OPEN c1(cust_id);
+    LOOP
+        FETCH c1 into cool_id;
+        EXIT WHEN c1%notfound;
+        UPDATE coolers set rental_status = 'N' WHERE cooler_id = cool_id;
+
+    END LOOP;
+    CLOSE c1;
+
+    DBMS_OUTPUT.NEW_LINE;
+    DBMS_OUTPUT.PUT('Rental stopped for customer: ' || cust_name || 'successfully!');
+    DBMS_OUTPUT.NEW_LINE;
+ END;
+/
+
+create or replace PROCEDURE update_customer_status
+AS
+v_customer customers%ROWTYPE;
+v_end contracts.end_date%type;
+v_start contracts.start_date%type;
+cursor c1
+IS select * from customers;
+cursor c2(cus_id customers.customer_id%TYPE)
+IS 
+select max(start_date),max(end_date) from contracts
+where customers_customer_id = cus_id;
+BEGIN
+   open c1;
+   LOOP
+        fetch c1 into v_customer;
+        EXIT WHEN c1%NOTFOUND; 
+        open c2(v_customer.customer_id);
+        LOOP
+            fetch c2 into v_start,v_end;
+            EXIT WHEN c2%NOTFOUND; 
+            IF v_end < sysdate THEN 
+             update customers
+             set status = 'inactive'
+             where customers.customer_id = v_customer.customer_id;
+             ELSIF v_start < sysdate and v_end > sysdate THEN
+             update customers
+             set status = 'Active'
+             where customers.customer_id = v_customer.customer_id;
+            END IF; 
+        END LOOP; 
+        close c2;
+    END LOOP;
+    CLOSE c1;
+    DBMS_OUTPUT.PUT_LINE('Customer status is updated successfully');
+END;
+/
+
+create or replace Procedure update_inventory  IS  
+    Cursor c1 is Select INVENTORY_ITEM_ID, Quantity from order_items where process_status = 'N' ;
+    inv_to_change c1%rowtype;
+BEGIN 
+open c1;
+LOOP
+fetch c1 into inv_to_change;
+        EXIT when c1%NOTFOUND;
+            UPDATE inventory 
+            SET quantity = quantity - inv_to_change.Quantity 
+            WHERE ITEM_ID = inv_to_change.INVENTORY_ITEM_ID; 
+         END LOOP;
+         Close c1;  
+        UPDATE order_items 
+        SET process_status = 'Y'
+        WHERE process_status = 'N';
+        COMMIT;
+END;
+/
+
+
+create or replace PROCEDURE update_late_fee
+AS
+ v_end_date billing.end_date%type;
+ v_billing_amount billing.billing_amount%type;
+ v_amount_paid billing.amount_paid%type;
+ v_customer_id billing.CUSTOMERS_CUSTOMER_ID%type;
+cursor c1
+IS 
+select CUSTOMERS_CUSTOMER_ID,end_date,billing_amount,amount_paid from billing;
+BEGIN
+   open c1;
+   LOOP
+        fetch c1 into v_customer_id,v_end_date,v_billing_amount,v_amount_paid;
+        EXIT WHEN c1%NOTFOUND; 
+        IF v_end_date < sysdate AND v_billing_amount > v_amount_paid THEN 
+        DBMS_OUTPUT.PUT_LINE('Customer_id: '||v_customer_id||' should pay late fee!');
+        update billing 
+        set billing_amount = billing_amount*1.1,late_fee = billing_amount*0.1
+        where customers_customer_id = v_customer_id;
+        DBMS_OUTPUT.PUT_LINE('The late fee of customer_id: '||v_customer_id||' is updated!');
+        END IF;
+    END LOOP;
+    CLOSE c1;
+END;
+/
