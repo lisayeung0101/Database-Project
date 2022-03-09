@@ -1,0 +1,431 @@
+DROP TABLE EMP_EVALUATION CASCADE CONSTRAINTS;
+DROP TABLE STAFF CASCADE CONSTRAINTS;
+DROP TABLE INVENTORY CASCADE CONSTRAINTS;
+DROP TABLE ROUTES_ZIP CASCADE CONSTRAINTS;
+DROP TABLE DISCOUNTS CASCADE CONSTRAINTS; -- need insert statements for this
+DROP TABLE CUSTOMERS CASCADE CONSTRAINTS;
+DROP TABLE ORDERS CASCADE CONSTRAINTS;
+DROP TABLE ORDER_ITEMS CASCADE CONSTRAINTS;
+DROP TABLE COOLERS CASCADE CONSTRAINTS;
+DROP TABLE RENTALS CASCADE CONSTRAINTS;
+DROP TABLE CONTRACTS CASCADE CONSTRAINTS;
+DROP TABLE ZIP_TO_ADDRESS CASCADE CONSTRAINTS;
+DROP TABLE BILLING CASCADE CONSTRAINTS;
+DROP TABLE DELIVERY CASCADE CONSTRAINTS;
+DROP TABLE BILLING_ITEM CASCADE CONSTRAINTS;
+DROP TABLE LEADS CASCADE CONSTRAINTS;
+DROP TABLE ORG_TYPE CASCADE CONSTRAINTS;
+
+CREATE TABLE billing (
+    billing_id              NUMBER(10) NOT NULL,
+    monthly_fee             NUMBER(10, 2),
+    billing_amount          NUMBER(10, 2) Default(0) NOT NULL,
+    start_date              DATE,
+    end_date                DATE,
+    amount_paid             NUMBER(10, 2),
+    late_fee                NUMBER(10, 2) Default(0) ,
+    referred_count          NUMBER(6),
+    total_discount          NUMBER(10, 2),
+    tax                     NUMBER(10, 2),
+    staff_staff_id          NUMBER(10) NOT NULL,
+    customers_customer_id   NUMBER(10) NOT NULL
+);
+
+ALTER TABLE billing ADD CONSTRAINT billing_pk PRIMARY KEY ( billing_id );
+
+CREATE TABLE billing_item (
+    billingitem_id       NUMBER(10) NOT NULL,
+    quantity             NUMBER(8),
+    total_price          NUMBER(10, 2),
+    billing_zip          NUMBER,
+    description          VARCHAR2(300),
+    billing_billing_id   NUMBER(10) NOT NULL,
+    inventory_item_id    NUMBER(10) NOT NULL
+);
+
+ALTER TABLE billing_item ADD CONSTRAINT billing_item_pk PRIMARY KEY ( billingitem_id );
+
+CREATE TABLE contracts (
+    contract_id             NUMBER(10) NOT NULL,
+    contract_date           DATE,
+    start_date              DATE,
+    end_date                DATE,
+    payment_method          VARCHAR2(20),
+    customers_customer_id   NUMBER(10) NOT NULL,
+    staff_staff_id          NUMBER(10) NOT NULL,
+    staff_first_name        VARCHAR2(25),
+    staff_last_name         VARCHAR2(25),
+    customer_name           VARCHAR2(25),
+    customer_zip            NUMBER
+);
+
+ALTER TABLE contracts ADD CONSTRAINT contracts_pk PRIMARY KEY ( contract_id );
+
+CREATE TABLE coolers (
+    cooler_id   NUMBER(10) NOT NULL,
+    rental_status   VARCHAR2(1) Default('N') NOT NULL
+);
+
+ALTER TABLE coolers ADD CONSTRAINT coolers_pk PRIMARY KEY ( cooler_id );
+
+CREATE TABLE customers (
+    customer_id             NUMBER(10) NOT NULL,
+    customer_name           VARCHAR2(25),
+    zip_code                NUMBER,
+    org_type                VARCHAR2(20),
+    num_emps                NUMBER(10),
+    delivery_address        VARCHAR2(60) NOT NULL,
+    status                  VARCHAR2(10) Default('Active'),
+    referring_customer_id   NUMBER(10)
+);
+
+ALTER TABLE customers ADD CONSTRAINT customers_pk PRIMARY KEY ( customer_id );
+
+CREATE TABLE delivery (
+    delivery_id             NUMBER(10) NOT NULL,
+    delivery_date           DATE,
+    driver_comments         VARCHAR2(300),
+    customer_comments       VARCHAR2(300),
+    customers_customer_id   NUMBER(10) NOT NULL,
+    staff_staff_id          NUMBER(10) NOT NULL,
+    routes_zip_route_id     NUMBER(10) NOT NULL,
+    routes_zip_zip_code     NUMBER NOT NULL,
+    orders_order_id         NUMBER(10)
+);
+
+ALTER TABLE delivery ADD CONSTRAINT delivery_pk PRIMARY KEY ( delivery_id );
+
+CREATE TABLE discounts (
+    discount_id          NUMBER(10) NOT NULL,
+    discount             NUMBER(10, 2),
+    discount_type        VARCHAR2(20),
+    billing_billing_id   NUMBER(10) NOT NULL
+);
+
+ALTER TABLE discounts ADD CONSTRAINT discounts_pk PRIMARY KEY ( discount_id );
+
+
+CREATE TABLE emp_evaluation (
+    eval_id              NUMBER(10) NOT NULL,
+    emp_id               NUMBER(10, 2) NOT NULL,
+    mgr_id               NUMBER(10, 2) NOT NULL,
+    eval_date            DATE NOT NULL,
+    num_deliveries       NUMBER NOT NULL,
+    eval_delivery        NUMBER(10, 2) NOT NULL,
+    num_sales            NUMBER(10, 2) NOT NULL,
+    eval_sales           NUMBER(6) NOT NULL,
+    num_leads            NUMBER(10) NOT NULL,
+    eval_leads           NUMBER(10) NOT NULL,
+    tot_evaluation       NUMBER(10,2) NOT NULL,
+    comments             VARCHAR2(100) 
+);
+
+ALTER TABLE emp_evaluation ADD CONSTRAINT eval_pk PRIMARY KEY ( eval_id );
+
+CREATE TABLE inventory (
+    item_id            NUMBER(10) NOT NULL,
+    item_name          VARCHAR2(30) NOT NULL,
+    item_description   VARCHAR2(300),
+    quantity           NUMBER(12) NOT NULL,
+    cost_each          NUMBER(10, 2),
+    price_each         NUMBER(10, 2)
+);
+
+ALTER TABLE inventory ADD CONSTRAINT inventory_pk PRIMARY KEY ( item_id );
+
+CREATE TABLE leads (
+    lead_id                 NUMBER(10) NOT NULL,
+    po_client_name          VARCHAR2(25) NOT NULL,
+    po_client_phone         VARCHAR2(20),
+    po_client_type          VARCHAR2(20),
+    po_client_address       VARCHAR2(60),
+    comments                VARCHAR2(300),
+    staff_staff_id          NUMBER(10) NOT NULL,
+    customers_customer_id   NUMBER(10) NOT NULL,
+    delivery_delivery_id    NUMBER(10) NOT NULL
+);
+
+ALTER TABLE leads ADD CONSTRAINT leads_pk PRIMARY KEY ( lead_id );
+
+CREATE TABLE order_items (
+    orderitem_id        NUMBER(10) NOT NULL,
+    item_name           VARCHAR2(30) NOT NULL,
+    quantity            NUMBER(10) NOT NULL,
+    paideach            NUMBER(10, 2) NOT NULL,
+    orders_order_id     NUMBER(10) NOT NULL,
+    inventory_item_id   NUMBER(10) NOT NULL,
+    process_status      VARCHAR2(1) Default('N') NOT NULL
+);
+
+ALTER TABLE order_items ADD CONSTRAINT order_items_pk PRIMARY KEY ( orderitem_id );
+
+CREATE TABLE orders (
+    order_id                NUMBER(10) NOT NULL,
+    order_date              DATE,
+    order_type              VARCHAR2(10),
+    customers_customer_id   NUMBER(10) NOT NULL,
+    staff_staff_id          NUMBER(10) NOT NULL
+);
+
+ALTER TABLE orders ADD CONSTRAINT orders_pk PRIMARY KEY ( order_id );
+
+CREATE TABLE org_type (
+    org_type        NUMBER(10) NOT NULL,
+    org_type_desc   VARCHAR2(300)
+);
+
+ALTER TABLE org_type ADD CONSTRAINT org_type_pk PRIMARY KEY ( org_type );
+
+CREATE TABLE rentals (
+    rental_id               NUMBER(10) NOT NULL,
+    start_date              DATE NOT NULL,
+    end_date                DATE NOT NULL,
+    rental_deposit          NUMBER(10, 2),
+    deposit_waived          VARCHAR2(5) Default('NO'),
+    customers_customer_id   NUMBER(10) NOT NULL,
+    coolers_cooler_id       NUMBER(10) NOT NULL
+);
+
+ALTER TABLE rentals ADD CONSTRAINT rentals_pk PRIMARY KEY ( rental_id );
+
+CREATE TABLE routes_zip (
+    route_id     NUMBER(10) NOT NULL,
+    zip_code     NUMBER NOT NULL,
+    vehicle_id   NUMBER(10)
+);
+
+ALTER TABLE routes_zip ADD CONSTRAINT routes_zip_pk PRIMARY KEY ( route_id,
+                                                                  zip_code );
+
+CREATE TABLE staff (
+    staff_id         NUMBER(10) NOT NULL,
+    first_name       VARCHAR2(25) NOT NULL,
+    last_name        VARCHAR2(25) NOT NULL,
+    sex              VARCHAR2(1),
+    dob              DATE,
+    race             VARCHAR2(20),
+    address          VARCHAR2(60),
+    position         VARCHAR2(20) NOT NULL,
+    promotion_date   DATE,
+    salary           NUMBER(10, 2),
+    bonus            NUMBER(10, 2),
+    manager_id       NUMBER(10)
+);
+
+ALTER TABLE staff ADD CONSTRAINT staff_pk PRIMARY KEY ( staff_id );
+
+CREATE TABLE zip_to_address (
+    addr_id   NUMBER(10) NOT NULL,
+    zip       NUMBER,
+    address   VARCHAR2(60)
+);
+
+ALTER TABLE zip_to_address ADD CONSTRAINT zip_to_address_pk PRIMARY KEY ( addr_id );
+
+ALTER TABLE billing
+    ADD CONSTRAINT billing_customers_fk FOREIGN KEY ( customers_customer_id )
+        REFERENCES customers ( customer_id );
+
+ALTER TABLE billing_item
+    ADD CONSTRAINT billing_item_billing_fk FOREIGN KEY ( billing_billing_id )
+        REFERENCES billing ( billing_id );
+
+ALTER TABLE billing_item
+    ADD CONSTRAINT billing_item_inventory_fk FOREIGN KEY ( inventory_item_id )
+        REFERENCES inventory ( item_id );
+
+ALTER TABLE billing
+    ADD CONSTRAINT billing_staff_fk FOREIGN KEY ( staff_staff_id )
+        REFERENCES staff ( staff_id );
+
+ALTER TABLE contracts
+    ADD CONSTRAINT contracts_customers_fk FOREIGN KEY ( customers_customer_id )
+        REFERENCES customers ( customer_id );
+
+ALTER TABLE contracts
+    ADD CONSTRAINT contracts_staff_fk FOREIGN KEY ( staff_staff_id )
+        REFERENCES staff ( staff_id );
+
+ALTER TABLE customers
+    ADD CONSTRAINT customers_customers_fk FOREIGN KEY ( referring_customer_id )
+        REFERENCES customers ( customer_id );
+
+ALTER TABLE delivery
+    ADD CONSTRAINT delivery_customers_fk FOREIGN KEY ( customers_customer_id )
+        REFERENCES customers ( customer_id );
+
+ALTER TABLE delivery
+    ADD CONSTRAINT delivery_routes_zip_fk FOREIGN KEY ( routes_zip_route_id,
+                                                        routes_zip_zip_code )
+        REFERENCES routes_zip ( route_id,
+                                zip_code );
+
+ALTER TABLE delivery
+    ADD CONSTRAINT delivery_staff_fk FOREIGN KEY ( staff_staff_id )
+        REFERENCES staff ( staff_id );
+
+ALTER TABLE discounts
+    ADD CONSTRAINT discounts_billing_fk FOREIGN KEY ( billing_billing_id )
+        REFERENCES billing ( billing_id );
+
+ALTER TABLE emp_evaluation
+    ADD CONSTRAINT emp_evaluation_staff_fk FOREIGN KEY ( emp_id )
+        REFERENCES staff ( staff_id );
+
+ALTER TABLE emp_evaluation
+    ADD CONSTRAINT emp_evaluation_staff_fk2 FOREIGN KEY ( mgr_id )
+        REFERENCES staff ( staff_id );
+
+ALTER TABLE leads
+    ADD CONSTRAINT leads_customers_fk FOREIGN KEY ( customers_customer_id )
+        REFERENCES customers ( customer_id );
+
+ALTER TABLE leads
+    ADD CONSTRAINT leads_delivery_fk FOREIGN KEY ( delivery_delivery_id )
+        REFERENCES delivery ( delivery_id );
+
+ALTER TABLE leads
+    ADD CONSTRAINT leads_staff_fk FOREIGN KEY ( staff_staff_id )
+        REFERENCES staff ( staff_id );
+
+ALTER TABLE order_items
+    ADD CONSTRAINT order_items_inventory_fk FOREIGN KEY ( inventory_item_id )
+        REFERENCES inventory ( item_id );
+
+ALTER TABLE order_items
+    ADD CONSTRAINT order_items_orders_fk FOREIGN KEY ( orders_order_id )
+        REFERENCES orders ( order_id );
+
+ALTER TABLE orders
+    ADD CONSTRAINT orders_customers_fk FOREIGN KEY ( customers_customer_id )
+        REFERENCES customers ( customer_id );
+
+ALTER TABLE orders
+    ADD CONSTRAINT orders_staff_fk FOREIGN KEY ( staff_staff_id )
+        REFERENCES staff ( staff_id );
+
+ALTER TABLE rentals
+    ADD CONSTRAINT rentals_coolers_fk FOREIGN KEY ( coolers_cooler_id )
+        REFERENCES coolers ( cooler_id );
+
+ALTER TABLE rentals
+    ADD CONSTRAINT rentals_customers_fk FOREIGN KEY ( customers_customer_id )
+        REFERENCES customers ( customer_id );
+
+ALTER TABLE staff
+    ADD CONSTRAINT staff_staff_fk FOREIGN KEY ( manager_id )
+        REFERENCES staff ( staff_id );
+
+
+
+
+
+-- Oracle SQL Developer Data Modeler Summary Report: 
+-- 
+-- CREATE TABLE                            17
+-- CREATE INDEX                             0
+-- ALTER TABLE                             65
+-- CREATE VIEW                              0
+-- ALTER VIEW                               0
+-- CREATE PACKAGE                           0
+-- CREATE PACKAGE BODY                      0
+-- CREATE PROCEDURE                         0
+-- CREATE FUNCTION                          0
+-- CREATE TRIGGER                           0
+-- ALTER TRIGGER                            0
+-- CREATE COLLECTION TYPE                   0
+-- CREATE STRUCTURED TYPE                   0
+-- CREATE STRUCTURED TYPE BODY              0
+-- CREATE CLUSTER                           0
+-- CREATE CONTEXT                           0
+-- CREATE DATABASE                          0
+-- CREATE DIMENSION                         0
+-- CREATE DIRECTORY                         0
+-- CREATE DISK GROUP                        0
+-- CREATE ROLE                              0
+-- CREATE ROLLBACK SEGMENT                  0
+-- CREATE SEQUENCE                          0
+-- CREATE MATERIALIZED VIEW                 0
+-- CREATE MATERIALIZED VIEW LOG             0
+-- CREATE SYNONYM                           0
+-- CREATE TABLESPACE                        0
+-- CREATE USER                              0
+-- 
+-- DROP TABLESPACE                          0
+-- DROP DATABASE                            0
+-- 
+-- REDACTION POLICY                         0
+-- TSDP POLICY                              0
+-- 
+-- ORDS DROP SCHEMA                         0
+-- ORDS ENABLE SCHEMA                       0
+-- ORDS ENABLE OBJECT                       0
+-- 
+-- ERRORS                                   0
+-- WARNINGS                                 0
+
+
+/* populate data into tables  */ 
+
+
+-- create necessary sequences
+
+DROP SEQUENCE Customer_id_seq;
+CREATE SEQUENCE Customer_id_seq
+    INCREMENT BY 1
+    START WITH 1;
+
+DROP SEQUENCE order_id_seq;
+CREATE SEQUENCE order_id_seq
+    INCREMENT BY 1
+    START WITH 1;
+
+DROP SEQUENCE order_item_id_seq;
+CREATE SEQUENCE order_item_id_seq
+    INCREMENT BY 1
+    START WITH 1;
+
+DROP SEQUENCE inv_id_seq;
+CREATE SEQUENCE inv_id_seq
+    INCREMENT BY 1
+    START WITH 1;
+    
+DROP SEQUENCE lead_id_seq;
+CREATE SEQUENCE lead_id_seq
+    INCREMENT BY 1
+    START WITH 1;
+    
+DROP SEQUENCE Delivery_id_seq;
+CREATE SEQUENCE Delivery_id_seq
+    INCREMENT BY 1
+    START WITH 1;
+    
+DROP SEQUENCE addr_id_seq;
+CREATE SEQUENCE addr_id_seq
+    INCREMENT BY 1
+    START WITH 1;
+    
+DROP SEQUENCE bill_id_seq;
+CREATE SEQUENCE bill_id_seq
+    INCREMENT BY 1
+    START WITH 1;
+
+DROP SEQUENCE billitem_id_seq;
+CREATE SEQUENCE billitem_id_seq
+    INCREMENT BY 1
+    START WITH 1;
+    
+DROP SEQUENCE COOLER_ID_SEQ;
+CREATE SEQUENCE COOLER_ID_SEQ
+    INCREMENT BY 1
+    START WITH 1;
+    
+DROP SEQUENCE rental_id_seq;
+CREATE SEQUENCE rental_id_seq
+    INCREMENT BY 1
+    START WITH 1;
+    
+DROP SEQUENCE eval_id_seq;
+CREATE SEQUENCE eval_id_seq
+    INCREMENT BY 1
+    START WITH 1;
