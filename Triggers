@@ -1,0 +1,105 @@
+/*Create Triggers */ 
+create or replace TRIGGER check_contract_duration
+BEFORE INSERT OR UPDATE ON contracts
+FOR EACH ROW 
+DECLARE
+ WRONG_DURATION EXCEPTION;
+BEGIN 
+ IF months_between(:new.end_date,:new.start_date) != 12 THEN 
+ RAISE WRONG_DURATION;
+ END IF; 
+ EXCEPTION
+  WHEN WRONG_DURATION THEN 
+  RAISE_APPLICATION_ERROR (-20326,'The duration of the contract is not one year!');
+END; 
+/
+
+create or replace TRIGGER check_inventory
+BEFORE INSERT OR UPDATE ON order_items 
+FOR EACH ROW 
+DECLARE 
+ v_quantity inventory.quantity%type;
+ OUTOFSROCK EXCEPTION;
+BEGIN 
+ SELECT quantity INTO v_quantity FROM inventory
+ where inventory.item_id = :new.inventory_item_id; 
+ IF v_quantity < :new.quantity THEN 
+ RAISE OUTOFSROCK;
+ END IF; 
+ EXCEPTION
+  WHEN OUTOFSROCK THEN 
+  RAISE_APPLICATION_ERROR (-20326,'out of stock!');
+END;
+/
+
+create or replace TRIGGER check_rental_status
+BEFORE INSERT OR UPDATE ON rentals 
+FOR EACH ROW 
+DECLARE 
+ v_status customers.status%type;
+ Notactive EXCEPTION;
+BEGIN 
+ SELECT status INTO v_status FROM customers
+ where customers.customer_id = :new.CUSTOMERS_CUSTOMER_ID; 
+ IF v_status = 'inactive' THEN 
+ RAISE Notactive;
+ END IF; 
+ EXCEPTION
+  WHEN Notactive THEN 
+  RAISE_APPLICATION_ERROR (-20326,'customer cannot rent cause it is inactive!');
+END; 
+/
+
+CREATE OR REPLACE TRIGGER check_staff_salary
+BEFORE INSERT OR UPDATE ON staff
+FOR EACH ROW
+
+DECLARE 
+   min_sal staff.salary%type; 
+   max_sal staff.salary%type;
+   count_rows NUMBER;
+   unfair_sal EXCEPTION;
+   pragma autonomous_transaction;
+BEGIN
+   SELECT count(*) INTO count_rows FROM staff;
+   IF count_rows<1 THEN
+     RETURN;
+   END IF;
+   SELECT min(salary) INTO min_sal FROM staff;
+   SELECT max(salary) INTO max_sal FROM staff;
+   IF :new.salary>=min_sal AND :new.salary<=max_sal THEN
+      RETURN;
+   END IF;
+   IF :new.salary<min_sal THEN min_sal := :new.salary; 
+   END IF;
+   IF :new.salary>max_sal THEN max_sal := :new.salary;
+   END IF;
+   IF (max_sal - min_sal) >40000 THEN RAISE unfair_sal;
+   END IF;
+EXCEPTION
+   WHEN unfair_sal THEN
+RAISE_APPLICATION_ERROR (-20326,'Error in Staff Salary - difference between salaries cannot be so high');
+END;
+/
+
+CREATE OR REPLACE TRIGGER check_late_fee
+BEFORE UPDATE ON billing 
+FOR EACH ROW 
+DECLARE 
+ v_end_date billing.end_date%type;
+ v_billing_amount billing.billing_amount%type;
+ v_amount_paid billing.amount_paid%type;
+ LATEPAYMENT EXCEPTION;
+ 
+BEGIN 
+    IF sysdate > :old.end_date AND :old.amount_paid < :old.billing_amount 
+    THEN RAISE LATEPAYMENT;
+    END IF;
+EXCEPTION
+  WHEN LATEPAYMENT THEN 
+      DBMS_OUTPUT.NEW_LINE;
+      DBMS_OUTPUT.PUT('The customer should pay late fee!');
+      DBMS_OUTPUT.NEW_LINE;
+      RAISE_APPLICATION_ERROR (-20326,'The customer should pay late fee!');
+END;
+/
