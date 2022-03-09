@@ -1,0 +1,112 @@
+
+/*Create Package */ 
+CREATE OR REPLACE PACKAGE cooler_package
+AS
+
+PROCEDURE buy_coolers;
+PROCEDURE rent_water_cooler(cust_name VARCHAR2, rental_dep NUMBER);
+PROCEDURE stop_rental(cust_name VARCHAR2);
+
+END cooler_package;
+/
+REM The body follows
+CREATE OR REPLACE PACKAGE BODY cooler_package
+AS 
+
+/*PROCEDURE FOLLOWS*/
+PROCEDURE buy_coolers
+AS
+ BEGIN 
+
+    INSERT INTO COOLERS
+    VALUES(cooler_id_seq.NEXTVAL,'N');
+
+    DBMS_OUTPUT.NEW_LINE;
+    DBMS_OUTPUT.PUT('Water Cooler purchased successfully!');
+    DBMS_OUTPUT.NEW_LINE;
+end buy_coolers;
+
+PROCEDURE rent_water_cooler(cust_name VARCHAR2, rental_dep NUMBER)
+AS
+    curr_date DATE;
+    cool_id NUMBER;
+    r_price NUMBER;
+    cust_id NUMBER;
+    waived VARCHAR2(5);
+    v_rental_dep NUMBER;
+    v_org_type NUMBER;
+    available_cooler_count NUMBER;
+    NO_COOLER_EXC EXCEPTION;
+
+ BEGIN 
+    select COUNT(*) into available_cooler_count 
+    from coolers c
+    where rental_status = 'N';
+
+    IF available_cooler_count = 0 THEN
+    RAISE NO_COOLER_EXC;
+    ELSE
+        select c.cooler_id into cool_id 
+        from coolers c
+        where rental_status = 'N'
+        FETCH FIRST ROW ONLY;
+
+        select sysdate into curr_date from dual;
+        select customer_id, org_type into cust_id, v_org_type from customers where upper(customer_name) = upper(cust_name);
+        -- rental end date should come from contract end date?
+        IF (v_org_type < 5) THEN
+        waived := 'NO';
+        v_rental_dep := rental_dep;
+        ELSE
+        waived := 'YES';
+        v_rental_dep := 0;
+        END IF;
+
+        insert into rentals
+        values(rental_id_seq.nextval, curr_date, add_months(curr_date, 12), v_rental_dep, waived, cust_id, cool_id);
+        COMMIT;
+
+
+        UPDATE COOLERS 
+        SET RENTAL_STATUS = 'Y'
+        WHERE COOLER_ID = cool_id;
+        COMMIT;
+
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('Water Cooler rented successfully!');
+        DBMS_OUTPUT.NEW_LINE;
+    END IF;
+    EXCEPTION WHEN
+        NO_COOLER_EXC THEN
+            DBMS_OUTPUT.NEW_LINE;
+            DBMS_OUTPUT.PUT('No water coolers available!');
+            DBMS_OUTPUT.NEW_LINE;
+ END rent_water_cooler;
+ 
+PROCEDURE stop_rental(cust_name VARCHAR2)
+AS
+    cust_id NUMBER;
+    curr_date DATE;
+    cool_id NUMBER;
+    cursor c1(c_id NUMBER) IS select coolers_cooler_id from rentals where customers_customer_id = c_id;
+ BEGIN 
+    select customer_id into cust_id from customers where upper(customer_name) = upper(cust_name);
+    select sysdate into curr_date from dual;
+    UPDATE rentals set end_date = curr_date where customers_customer_id = cust_id;
+    OPEN c1(cust_id);
+    LOOP
+        FETCH c1 into cool_id;
+        EXIT WHEN c1%notfound;
+        UPDATE coolers set rental_status = 'N' WHERE cooler_id = cool_id;
+
+    END LOOP;
+    CLOSE c1;
+
+    DBMS_OUTPUT.NEW_LINE;
+    DBMS_OUTPUT.PUT('Rental stopped for customer: ' || cust_name || 'successfully!');
+    DBMS_OUTPUT.NEW_LINE;
+ END stop_rental; 
+ 
+
+END cooler_package;
+/
