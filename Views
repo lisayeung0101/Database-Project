@@ -1,0 +1,59 @@
+CREATE OR REPLACE VIEW DELIVERY_MANAGE
+AS
+SELECT s.STAFF_ID, s.first_name, s.last_name,
+sum(e.num_deliveries) as DELIVERY_COUNT, 
+sum(e.num_sales) as sales,
+sum(e.num_leads) as LEADS_COUNT,
+CASE WHEN sum(e.num_deliveries) = 0 THEN 0
+ELSE sum(e.num_leads) / sum(e.num_deliveries) END AS LEADS_PER_DELIVERY_RATIO
+FROM emp_evaluation e
+right join staff s on s.staff_id = e.emp_id
+WHERE upper(s.position) = 'DELIVERY'
+--substr(EVAL_DATE,4,3) = substr(sysdate,4,3)
+Group by s.STAFF_ID, s.first_name, s.last_name
+order by sum(e.num_sales) desc
+WITH READ ONLY;
+/
+
+CREATE OR REPLACE VIEW SALES
+AS
+Select STAFF_ID, first_name, last_name, total_quantity, rank() over(order by total_quantity DESC) as staff_rank
+from
+(SELECT s.STAFF_ID, s.first_name, s.last_name, NVL2(sum(bi.quantity), sum(bi.quantity), 0)  as total_quantity
+FROM billing b 
+join billing_item bi on b.billing_id = bi.BILLING_BILLING_ID
+right join staff s on b.staff_staff_id = s.staff_id
+--WHERE substr(END_DATE,4,3) = substr(sysdate,4,3)
+GROUP BY s.STAFF_ID, s.first_name, s.last_name)
+WITH READ ONLY;
+/
+
+
+CREATE OR REPLACE VIEW discrimination_report AS
+SELECT 
+CASE 
+WHEN FLOOR((sysdate - s.dob)/365) > 20 AND FLOOR((sysdate - s.dob)/365) <= 30 THEN '[20-30]'
+WHEN FLOOR((sysdate - s.dob)/365) > 30 AND FLOOR((sysdate - s.dob)/365) <= 40 THEN '[30-40]'
+WHEN FLOOR((sysdate - s.dob)/365) > 40 AND FLOOR((sysdate - s.dob)/365) <= 50 THEN '[40-50]'
+WHEN FLOOR((sysdate - s.dob)/365) > 50 AND FLOOR((sysdate - s.dob)/365) <= 60 THEN '[50-60]'
+ELSE '[60+]'
+END as Age,
+CASE WHEN s.sex = 'M' THEN 'Male' ELSE 'Female' END AS Gender, 
+s.race, 
+AVG(e.eval_delivery) AS avg_delivery_evaluation, 
+AVG(e.eval_sales) AS avg_sales_evaluation, 
+AVG(e.eval_leads) AS avg_lead_evaluation, AVG(e.tot_evaluation) AS avg_total_evaluation
+FROM emp_evaluation e
+JOIN staff s ON e.emp_id = s.staff_id
+GROUP BY 
+GROUPING SETS (s.race, CASE 
+                        WHEN FLOOR((sysdate - s.dob)/365) > 20 AND FLOOR((sysdate - s.dob)/365) <= 30 THEN '[20-30]'
+                        WHEN FLOOR((sysdate - s.dob)/365) > 30 AND FLOOR((sysdate - s.dob)/365) <= 40 THEN '[30-40]'
+                        WHEN FLOOR((sysdate - s.dob)/365) > 40 AND FLOOR((sysdate - s.dob)/365) <= 50 THEN '[40-50]'
+                        WHEN FLOOR((sysdate - s.dob)/365) > 50 AND FLOOR((sysdate - s.dob)/365) <= 60 THEN '[50-60]'
+                        ELSE '[60+]'
+                        END,
+        CASE WHEN s.sex = 'M' THEN 'Male' ELSE 'Female' END);
+END;
+/
+
