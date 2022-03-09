@@ -1,0 +1,179 @@
+/* Create Functions */ 
+create or replace FUNCTION calc_bill_amount(cust_name VARCHAR2) RETURN NUMBER AS 
+    cust_id NUMBER;
+    curr_date DATE;
+    bill_end_date DATE;
+    bill_amount NUMBER;
+    o_id NUMBER;
+    temp_bill_amount NUMBER;
+    cursor c1(c_id NUMBER) is select order_id from orders where customers_customer_id = c_id and order_date between ADD_MONTHS(sysdate, -1) and sysdate;
+ BEGIN 
+    select customer_id into cust_id
+    from customers where upper(customer_name) = cust_name;
+    select sysdate, ADD_MONTHS(sysdate, 1) into curr_date, bill_end_date from dual;
+    bill_amount := 0;
+    temp_bill_amount := 0;
+    open c1(cust_id);
+    loop
+        fetch c1 into o_id;
+        exit when c1%notfound;
+        select sum(quantity*paideach) into temp_bill_amount from order_items where inventory_item_id = o_id;
+        bill_amount := bill_amount + temp_bill_amount;
+    end loop;
+    close c1;
+    return bill_amount;
+ END;
+/
+
+create or replace FUNCTION calc_delivery_eval(deliv NUMBER) RETURN NUMBER AS 
+    eval NUMBER;
+ BEGIN 
+    select 
+        case when deliv  > 5 THEN 10
+        when deliv > 3 and deliv <= 5 then 8
+        when deliv > 1 and deliv <= 3 then 5
+        else 2 end into eval
+    from dual;
+    return eval;
+
+ END;
+/
+
+create or replace FUNCTION calc_leads_eval(numLeads NUMBER) RETURN NUMBER AS 
+    eval NUMBER;
+ BEGIN 
+    select 
+        case when numLeads > 10 THEN 10
+        when numLeads > 5 and numLeads <= 10 then 8
+        when numLeads > 2 and numLeads <= 5 then 5
+        else 2 end into eval
+    from dual;
+    return eval;
+
+ END;
+/
+
+create or replace FUNCTION calc_sales_eval(sales NUMBER) RETURN NUMBER AS 
+    eval NUMBER;
+ BEGIN 
+    select 
+        case when sales > 2000 THEN 10
+        when sales > 1500 and sales <= 2000 then 8
+        when sales > 1000 and sales <= 1500 then 6
+        when sales > 500 and sales <= 1000 then 4
+        else 2 end into eval
+    from dual;
+    return eval;
+
+ END;
+/
+
+create or replace FUNCTION calc_prorated_monthly_fee(cust_id NUMBER) RETURN NUMBER AS 
+    fee NUMBER;
+    c_start_date DATE;
+    v_last_day DATE;
+    days NUMBER;
+    -- assuming monthly fee is 300 for all
+ BEGIN 
+    select start_date, LAST_DAY(start_date) into c_start_date, v_last_day 
+    from contracts where customers_customer_id = cust_id;
+    select TRUNC(start_date, 'MM') - LAST_DAY(start_date) into days
+    from contracts where customers_customer_id = cust_id;
+    fee := (c_start_date - v_last_day) * 300 / days;
+    RETURN fee;
+ END;
+/
+
+create or replace FUNCTION get_item_name(itemID NUMBER) RETURN VARCHAR2 AS 
+    v_item_name VARCHAR2(100);
+    v_count NUMBER;
+    incorrectItem EXCEPTION;
+ BEGIN 
+    select count(*) into v_count from inventory where item_id = itemID;
+    IF v_count > 0 THEN
+    select item_name into v_item_name from inventory where item_id = itemID;
+    return v_item_name;
+    ELSE
+        RAISE incorrectItem;
+    END IF;
+EXCEPTION WHEN incorrectItem THEN
+    DBMS_OUTPUT.NEW_LINE;
+    DBMS_OUTPUT.PUT('Item being requested does not exist!');
+    DBMS_OUTPUT.NEW_LINE;
+
+
+ END;
+/
+
+
+
+/*Create Procedure */ 
+create or replace PROCEDURE add_staff (staff_id in staff.staff_id%TYPE,
+                        f_name VARCHAR2,
+                        l_name VARCHAR2,
+                        sex VARCHAR2,
+                        DOB VARCHAR2,
+                        race VARCHAR2,
+                        address VARCHAR2,
+                        position VARCHAR2,
+                        salary NUMBER,
+                        managerid VARCHAR2)
+AS
+
+ BEGIN 
+    INSERT INTO staff 
+    --(staff_id, first_name, last_name, sex, dob, race, address, position, salary) 
+    VALUES (staff_id, f_name, l_name, sex, TO_DATE(DOB, 'MM-DD-YYYY'), race, address, position, null,TO_NUMBER(salary),0,managerid);
+    DBMS_OUTPUT.NEW_LINE;
+    DBMS_OUTPUT.PUT('Staff Successfully created!');
+    DBMS_OUTPUT.NEW_LINE;
+ END;
+ / 
+
+create or replace PROCEDURE buy_coolers
+AS
+ BEGIN 
+
+    INSERT INTO COOLERS
+    VALUES(cooler_id_seq.NEXTVAL,'N');
+    DBMS_OUTPUT.NEW_LINE;
+    DBMS_OUTPUT.PUT('Water Cooler purchased successfully!');
+    DBMS_OUTPUT.NEW_LINE;
+ END;
+ /
+
+create or replace PROCEDURE buy_inventory (v_item_name VARCHAR2,
+                        item_desc VARCHAR2,
+                        qty NUMBER,
+                        cost_each NUMBER,
+                        price_each NUMBER)
+AS
+    rowcount NUMBER;
+ BEGIN 
+    select count(*) into rowcount 
+    from inventory where UPPER(item_name) = UPPER(v_item_name);
+
+    IF rowcount = 0 THEN
+        INSERT INTO INVENTORY VALUES (inv_id_seq.NEXTVAL, v_item_name, item_desc, qty, cost_each, price_each);
+        DBMS_OUTPUT.NEW_LINE;
+        DBMS_OUTPUT.PUT('Inventory Successfully purchased');
+        DBMS_OUTPUT.NEW_LINE;
+    ELSE
+        UPDATE inventory
+        SET quantity = quantity + qty, cost_each = cost_each, price_each = price_each, item_description = item_desc
+        WHERE UPPER(item_name) = UPPER(v_item_name);
+    END IF;
+ END;
+/
+
+create or replace PROCEDURE cal_referred_count(
+       v_customer_id in customers.customer_id%TYPE)
+AS
+total NUMBER;
+BEGIN
+select count(*) into total from customers
+where customers.referring_customer_id = v_customer_id;
+update billing set referred_count = total where customers_customer_id = v_customer_id;
+update billing set total_discount = total_discount + total*25 where customers_customer_id = v_customer_id;
+END;
+/
