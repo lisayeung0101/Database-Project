@@ -1,0 +1,299 @@
+
+INSERT INTO Customers VALUES
+(Customer_id_seq.nextval, 'Heinz College', 15213, 4, 68, 'Hamburg Hall, Forbes Avenue', 'Active', NULL);
+INSERT INTO Customers VALUES
+(Customer_id_seq.nextval,'CMU SCS', 15213, 3, 90, 'GHC, Forbes Avenue', 'Active', 1);
+INSERT INTO Customers VALUES
+(Customer_id_seq.nextval,'College of Fine Arts', 15213, 3, 68, '4919 Frew Street', 'Active', NULL);
+INSERT INTO Customers VALUES
+(Customer_id_seq.nextval,'Apple Shadyside', 15232, 5, 20, '5508 Walnut Street', 'Active', NULL);
+INSERT INTO Customers VALUES
+(Customer_id_seq.nextval,'Chatham University', 15232, 5, 100, 'Woodland Road', 'Active', NULL);
+INSERT INTO Customers VALUES
+(Customer_id_seq.nextval,'UPMC Shadyside', 15232, 5, 350, '5230 Centre Ave', 'Active', NULL);
+INSERT INTO Customers VALUES
+(Customer_id_seq.nextval,'St Edmund Academy', 15217, 2, 15, '5705 Darlington Road', 'Active', NULL);
+INSERT INTO Customers VALUES
+(Customer_id_seq.nextval,'Congregation Beth Shalom', 15217, 2, 5, '5915 Beacon Street', 'Active', NULL);
+INSERT INTO Customers VALUES
+(Customer_id_seq.nextval,'School House Yoga', 15217, 1, 5, '2215 Muarry Ave', 'Active', NULL);
+INSERT INTO Customers VALUES
+(Customer_id_seq.nextval,'Jerrys Record', 15217, 1, 3, '2136 Muarry Ave', 'inactive', NULL);
+
+/*inserting some customers from leads into customers table */   
+INSERT INTO Customers VALUES
+(Customer_id_seq.nextval,'Caliban Book', 15213, 1, 3, '410 S Craig St', 'inactive', NULL);
+INSERT INTO Customers VALUES
+(Customer_id_seq.nextval,'Idea Foundry', 15213, 1, 5, '4551 Forbes Ave', 'inactive', NULL);
+INSERT INTO Customers VALUES
+(Customer_id_seq.nextval,'Kawaii Gifts', 15213, 1, 8, '738 Copeland St', 'inactive', NULL);
+INSERT INTO Customers VALUES
+(Customer_id_seq.nextval,'Yoga Flow', 15213, 1, 6, '5433 Walnut St', 'inactive', NULL);
+COMMIT;
+
+-- inserting records into Staff
+
+INSERT INTO Staff VALUES
+('100', 'Lisa', 'Yeung', 'F', to_date('01-01-1980', 'MM-DD-YYYY'), 'Black', '3000 Forbes Avenue', 'Manager', NULL, 80000, 1200, NULL);
+INSERT INTO Staff VALUES
+('109', 'Betty', 'Jones', 'F', to_date('01-19-1970', 'MM-DD-YYYY'), 'White', '1200 Muarray Avenue', 'Manager', NULL, 84000, 1200, NULL);
+INSERT INTO Staff VALUES
+('101', 'Cute', 'Jonas', 'M', to_date('09-07-1968', 'MM-DD-YYYY'), 'White', '1700 Muarray Avenue', 'Delivery', NULL, 50000, 100, 100);
+INSERT INTO Staff VALUES
+('102', 'Smart', 'Smith', 'M', to_date('10-07-1990', 'MM-DD-YYYY'), 'Hispanic', '451 Muarray Avenue', 'Delivery', NULL, 50000, 120, 100);
+INSERT INTO Staff VALUES
+('103', 'Angela', 'Duckworth', 'F', to_date('09-20-1968', 'MM-DD-YYYY'), 'White', '3090 Beecwood Blvd', 'Delivery', NULL, 50000, 130, 109);
+INSERT INTO Staff VALUES
+('104', 'Sammie', 'Worth', 'F', to_date('11-04-1981', 'MM-DD-YYYY'), 'Black', '900 Holden Street', 'Sales', NULL, 70000, 300, 109);
+INSERT INTO Staff VALUES
+('105', 'Bear', 'Jonas', 'M', to_date('05-11-1988', 'MM-DD-YYYY'), 'White', '802 Muarray Avenue', 'Sales', NULL, 65000, 300, 109);
+INSERT INTO Staff VALUES
+('106', 'Paul', 'Yang', 'M', to_date('10-11-1978', 'MM-DD-YYYY'), 'Asian', '9089 Forbes Avenue', 'Delivery', NULL, 50000, 150, 100);
+INSERT INTO Staff VALUES
+('107', 'Sun', 'Xi', 'M', to_date('08-07-1994', 'MM-DD-YYYY'), 'Asian', '601 Holden Street', 'Accounting', NULL, 90000, 500, 100);
+INSERT INTO Staff VALUES
+('108', 'Michael', 'Lee', 'M', to_date('04-12-1996', 'MM-DD-YYYY'), 'Black', '802 Forbes Avenue', 'Delivery', NULL, 50000, 180, 100);
+commit;
+
+-- insert into inventory
+INSERT INTO INVENTORY VALUES (inv_id_seq.NEXTVAL, 'small bottle', 'Aquafina', 10000, 15, 25);
+INSERT INTO INVENTORY VALUES (inv_id_seq.NEXTVAL, 'big bottle', 'Aquafina', 10000, 20, 45);
+INSERT INTO INVENTORY VALUES (inv_id_seq.NEXTVAL, 'plastic cups 10', 'disposable mini size', 1000, 0.5, 2);
+INSERT INTO INVENTORY VALUES (inv_id_seq.NEXTVAL, 'plastic cups 20', 'disposable normal size', 1000, 1, 5);
+INSERT INTO INVENTORY VALUES (inv_id_seq.NEXTVAL, 'plastic cups 50', 'disposable party size', 1000, 3, 8);
+INSERT INTO INVENTORY VALUES (inv_id_seq.NEXTVAL, 'Small caps', 'red', 500, 2, 3);
+INSERT INTO INVENTORY VALUES (inv_id_seq.NEXTVAL, 'Medium caps', 'blue', 500, 4, 6);
+INSERT INTO INVENTORY VALUES (inv_id_seq.NEXTVAL, 'Large caps', 'green', 500, 6, 11);
+INSERT INTO INVENTORY VALUES (inv_id_seq.NEXTVAL, 'sticker', 'logo', 2000, 30, 45);
+INSERT INTO INVENTORY VALUES (inv_id_seq.NEXTVAL, 'sticker_2', 'logo', 2000, 30, 45);
+
+COMMIT;
+
+-- insert into routes_zip
+
+insert into routes_zip values(239000,15106,31120);
+insert into routes_zip values(239001,15213,31121);
+insert into routes_zip values(239002,15217,31122);
+insert into routes_zip values(239003,15212,31123);
+insert into routes_zip values(239004,15120,31124);
+insert into routes_zip values(239005,15204,31125);
+insert into routes_zip values(239006,15215,31126);
+insert into routes_zip values(239007,15232,31127);
+insert into routes_zip values(239008,15210,31128);
+insert into routes_zip values(239009,15206,31129);
+
+COMMIT;
+
+-- inserting into org_type
+
+insert into org_type values(1,'small business');
+insert into org_type values(2,'service organization');
+insert into org_type values(3,'department in same company');
+insert into org_type values(4,'department in new company');
+insert into org_type values(5,'large corporations');
+
+COMMIT;
+
+-- inserting into delivery
+
+INSERT INTO DELIVERY VALUES
+(Delivery_id_seq.nextval, to_date('01-05-2022', 'MM-DD-YYYY'), NULL, 'Good', 1, 103, 239001, 15213, 1);
+
+INSERT INTO DELIVERY VALUES
+(Delivery_id_seq.nextval, to_date('01-05-2022', 'MM-DD-YYYY'), NULL, 'Good', 1, 103, 239001, 15213, 3);
+
+INSERT INTO DELIVERY VALUES
+(Delivery_id_seq.nextval, to_date('01-08-2022', 'MM-DD-YYYY'), NULL, NULL, 4, 101, 239007, 15232, 2);
+
+INSERT INTO DELIVERY VALUES
+(Delivery_id_seq.nextval, to_date('01-08-2022', 'MM-DD-YYYY'), NULL, NULL, 4, 101, 239007, 15232, 5);
+
+INSERT INTO DELIVERY VALUES
+(Delivery_id_seq.nextval, to_date('01-09-2022', 'MM-DD-YYYY'), NULL, NULL, 3, 102, 239001, 15213, 4);
+
+INSERT INTO DELIVERY VALUES
+(Delivery_id_seq.nextval, to_date('01-15-2022', 'MM-DD-YYYY'), NULL, NULL, 6, 103, 239007, 15232, 6);
+
+INSERT INTO DELIVERY VALUES
+(Delivery_id_seq.nextval, to_date('01-20-2022', 'MM-DD-YYYY'), NULL, 'Nice', 7, 108, 239002, 15217, 7);
+
+INSERT INTO DELIVERY VALUES
+(Delivery_id_seq.nextval, to_date('01-20-2022', 'MM-DD-YYYY'), NULL, 'Nice', 7, 108, 239002, 15217, 8);
+
+INSERT INTO DELIVERY VALUES
+(Delivery_id_seq.nextval, to_date('01-23-2022', 'MM-DD-YYYY'), NULL, NULL, 9, 103, 239002, 15217, 9);
+
+INSERT INTO DELIVERY VALUES
+(Delivery_id_seq.nextval, to_date('01-28-2022', 'MM-DD-YYYY'), NULL, 'Nice', 5, 106, 239007, 15232, 10);
+
+COMMIT;
+
+--insert orders and orderitems 
+
+INSERT INTO ORDERS VALUES 
+(order_id_seq.nextval, to_date('12-29-2022', 'MM-DD-YYYY'), 'PRE-ORDER',  1, 100);
+INSERT INTO ORDERS VALUES 
+(order_id_seq.nextval, to_date('01-25-2022', 'MM-DD-YYYY'), 'PRE-ORDER',  5, 105);
+INSERT INTO ORDERS VALUES 
+(order_id_seq.nextval, to_date('01-20-2022', 'MM-DD-YYYY'), 'PRE-ORDER',  9, 102);
+INSERT INTO ORDERS VALUES 
+(order_id_seq.nextval, to_date('01-20-2022', 'MM-DD-YYYY'), 'ON-SPOT',  7, 108);
+INSERT INTO ORDERS VALUES 
+(order_id_seq.nextval, to_date('01-15-2022', 'MM-DD-YYYY'), 'PRE-ORDER', 7, 104);
+INSERT INTO ORDERS VALUES 
+(order_id_seq.nextval, to_date('01-12-2022', 'MM-DD-YYYY'), 'PRE-ORDER', 6, 101);
+INSERT INTO ORDERS VALUES 
+(order_id_seq.nextval, to_date('01-08-2022', 'MM-DD-YYYY'), 'ON-SPOT', 4, 101);
+INSERT INTO ORDERS VALUES 
+(order_id_seq.nextval, to_date('01-06-2022', 'MM-DD-YYYY'), 'PRE-ORDER', 3, 104);
+INSERT INTO ORDERS VALUES 
+(order_id_seq.nextval, to_date('01-05-2022', 'MM-DD-YYYY'), 'ON-SPOT', 1, 103);
+INSERT INTO ORDERS VALUES 
+(order_id_seq.nextval, to_date('12-29-2022', 'MM-DD-YYYY'), 'PRE-ORDER',  4, 100);
+
+INSERT INTO ORDER_ITEMS VALUES 
+(order_item_id_seq.nextval, 'small bottle', 100,25,1,1, 'Y');
+INSERT INTO ORDER_ITEMS VALUES 
+(order_item_id_seq.nextval, 'big bottle', 10,45,2,2, 'Y');
+INSERT INTO ORDER_ITEMS VALUES 
+(order_item_id_seq.nextval, 'plastic cups 50', 5,8,3,5, 'Y');
+INSERT INTO ORDER_ITEMS VALUES 
+(order_item_id_seq.nextval, 'plastic cups 20', 3,5,4,4, 'Y');
+INSERT INTO ORDER_ITEMS VALUES 
+(order_item_id_seq.nextval, 'plastic cups 10', 2,2,5,3, 'Y');
+INSERT INTO ORDER_ITEMS VALUES 
+(order_item_id_seq.nextval, 'small bottle', 2,25,6,1,'Y');
+INSERT INTO ORDER_ITEMS VALUES 
+(order_item_id_seq.nextval, 'big bottle', 2,45,6,2,'N');
+INSERT INTO ORDER_ITEMS VALUES 
+(order_item_id_seq.nextval, 'small bottle', 5,25,7,1, 'Y');
+INSERT INTO ORDER_ITEMS VALUES 
+(order_item_id_seq.nextval, 'small bottle', 1,25,8,1, 'Y');
+INSERT INTO ORDER_ITEMS VALUES 
+(order_item_id_seq.nextval, 'big bottle', 30 ,45,9,2, 'N');
+INSERT INTO ORDER_ITEMS VALUES 
+(order_item_id_seq.nextval, 'small bottle', 2,25,9,1, 'Y');
+INSERT INTO ORDER_ITEMS VALUES 
+(order_item_id_seq.nextval, 'sticker', 5,25,9,9, 'N');
+
+COMMIT;
+
+-- inserting into leads table
+INSERT INTO leads VALUES
+(lead_id_seq.nextval,'School of Drama', '412-009-9876', 3, '5000 Forbes Ave', 'SOD might need water too',  103, 1, 1);
+INSERT INTO leads VALUES
+(lead_id_seq.nextval,'School of Design', '412-107-6876', 3, '5130 Morrison St', 'try SODesign',  101, 4, 3);
+INSERT INTO leads VALUES
+(lead_id_seq.nextval,'Caliban Book', '412-681-9111', 1, '410 S Craig St', NULL,  102,3, 5);
+INSERT INTO leads VALUES
+(lead_id_seq.nextval,'Idea Foundry', '412-682-3067', 1, '4551 Forbes Ave', NULL, 103,6 , 6);
+INSERT INTO leads VALUES
+(lead_id_seq.nextval, 'BrushNail Salon', '412-758-9908', 3, '731 Filbert St', NULL,  108, 7 , 7);
+INSERT INTO leads VALUES
+(lead_id_seq.nextval,'Kawaii Gifts', '412-687-2480', 3, '738 Copeland St', NULL, 103,  9, 9);
+INSERT INTO leads VALUES
+(lead_id_seq.nextval,'Yoga Flow', '412-621-1157', 3, '5433 Walnut St', 'new studio',  106, 5, 10);
+
+COMMIT;
+
+-- inserting into zip_to_address
+
+INSERT INTO zip_to_address VALUES (addr_id_seq.NEXTVAL, '15232', 'Shadyside');
+INSERT INTO zip_to_address VALUES (addr_id_seq.NEXTVAL, '15210', 'Squirrel Hill');
+INSERT INTO zip_to_address VALUES (addr_id_seq.NEXTVAL, '15213', 'Oakland');
+INSERT INTO zip_to_address VALUES (addr_id_seq.NEXTVAL, '15204', 'McKees Rocks');
+INSERT INTO zip_to_address VALUES (addr_id_seq.NEXTVAL, '15212', 'Perry South');
+INSERT INTO zip_to_address VALUES (addr_id_seq.NEXTVAL, '15215', 'Shaler Township');
+INSERT INTO zip_to_address VALUES (addr_id_seq.NEXTVAL, '15206', 'Larimer');
+INSERT INTO zip_to_address VALUES (addr_id_seq.NEXTVAL, '15217', 'Wilkinsburg');
+INSERT INTO zip_to_address VALUES (addr_id_seq.NEXTVAL, '15120', 'Homestead');
+INSERT INTO zip_to_address VALUES (addr_id_seq.NEXTVAL, '15106', 'Allegheny County');
+
+COMMIT;
+
+-- inserting into billing and billing_item
+
+Insert into BILLING (BILLING_ID,MONTHLY_FEE,BILLING_AMOUNT,START_DATE,END_DATE,AMOUNT_PAID,LATE_FEE,REFERRED_COUNT,TOTAL_DISCOUNT,TAX,STAFF_STAFF_ID,CUSTOMERS_CUSTOMER_ID) values (1,300,2796,to_date('01-MAR-22','DD-MON-RR'),to_date('01-APR-22','DD-MON-RR'),0,0,5,125,15,101,1);
+Insert into BILLING (BILLING_ID,MONTHLY_FEE,BILLING_AMOUNT,START_DATE,END_DATE,AMOUNT_PAID,LATE_FEE,REFERRED_COUNT,TOTAL_DISCOUNT,TAX,STAFF_STAFF_ID,CUSTOMERS_CUSTOMER_ID) values (2,300,472.1,to_date('01-MAR-22','DD-MON-RR'),to_date('01-APR-22','DD-MON-RR'),0,0,2,50,15,102,4);
+Insert into BILLING (BILLING_ID,MONTHLY_FEE,BILLING_AMOUNT,START_DATE,END_DATE,AMOUNT_PAID,LATE_FEE,REFERRED_COUNT,TOTAL_DISCOUNT,TAX,STAFF_STAFF_ID,CUSTOMERS_CUSTOMER_ID) values (3,300,-125,to_date('01-MAR-22','DD-MON-RR'),to_date('01-APR-22','DD-MON-RR'),0,0,5,125,15,102,2);
+Insert into BILLING (BILLING_ID,MONTHLY_FEE,BILLING_AMOUNT,START_DATE,END_DATE,AMOUNT_PAID,LATE_FEE,REFERRED_COUNT,TOTAL_DISCOUNT,TAX,STAFF_STAFF_ID,CUSTOMERS_CUSTOMER_ID) values (4,300,143.75,to_date('01-MAR-22','DD-MON-RR'),to_date('01-APR-22','DD-MON-RR'),0,0,0,0,15,101,5);
+Insert into BILLING (BILLING_ID,MONTHLY_FEE,BILLING_AMOUNT,START_DATE,END_DATE,AMOUNT_PAID,LATE_FEE,REFERRED_COUNT,TOTAL_DISCOUNT,TAX,STAFF_STAFF_ID,CUSTOMERS_CUSTOMER_ID) values (5,300,1560,to_date('01-MAR-22','DD-MON-RR'),to_date('01-APR-22','DD-MON-RR'),0,0,2,50,15,104,9);
+Insert into BILLING (BILLING_ID,MONTHLY_FEE,BILLING_AMOUNT,START_DATE,END_DATE,AMOUNT_PAID,LATE_FEE,REFERRED_COUNT,TOTAL_DISCOUNT,TAX,STAFF_STAFF_ID,CUSTOMERS_CUSTOMER_ID) values (6,300,17.25,to_date('01-MAR-22','DD-MON-RR'),to_date('01-APR-22','DD-MON-RR'),0,0,0,0,15,107,3);
+Insert into BILLING (BILLING_ID,MONTHLY_FEE,BILLING_AMOUNT,START_DATE,END_DATE,AMOUNT_PAID,LATE_FEE,REFERRED_COUNT,TOTAL_DISCOUNT,TAX,STAFF_STAFF_ID,CUSTOMERS_CUSTOMER_ID) values (7,300,172.5,to_date('01-MAR-22','DD-MON-RR'),to_date('01-APR-22','DD-MON-RR'),0,0,0,0,15,101,7);
+Insert into BILLING (BILLING_ID,MONTHLY_FEE,BILLING_AMOUNT,START_DATE,END_DATE,AMOUNT_PAID,LATE_FEE,REFERRED_COUNT,TOTAL_DISCOUNT,TAX,STAFF_STAFF_ID,CUSTOMERS_CUSTOMER_ID) values (8,300,111,to_date('01-MAR-22','DD-MON-RR'),to_date('01-APR-22','DD-MON-RR'),0,0,2,50,15,106,6);
+Insert into BILLING (BILLING_ID,MONTHLY_FEE,BILLING_AMOUNT,START_DATE,END_DATE,AMOUNT_PAID,LATE_FEE,REFERRED_COUNT,TOTAL_DISCOUNT,TAX,STAFF_STAFF_ID,CUSTOMERS_CUSTOMER_ID) values (9,300,-25,to_date('01-MAR-22','DD-MON-RR'),to_date('01-APR-22','DD-MON-RR'),0,0,1,25,15,109,8);
+
+
+
+Insert into BILLING_ITEM (BILLINGITEM_ID,QUANTITY,TOTAL_PRICE,BILLING_ZIP,DESCRIPTION,BILLING_BILLING_ID,INVENTORY_ITEM_ID) values (1,100,25,15281,'Testing inserts',1,1);
+Insert into BILLING_ITEM (BILLINGITEM_ID,QUANTITY,TOTAL_PRICE,BILLING_ZIP,DESCRIPTION,BILLING_BILLING_ID,INVENTORY_ITEM_ID) values (2,5,8,15281,'Testing inserts',1,5);
+Insert into BILLING_ITEM (BILLINGITEM_ID,QUANTITY,TOTAL_PRICE,BILLING_ZIP,DESCRIPTION,BILLING_BILLING_ID,INVENTORY_ITEM_ID) values (3,3,5,15281,'Testing inserts',7,4);
+Insert into BILLING_ITEM (BILLINGITEM_ID,QUANTITY,TOTAL_PRICE,BILLING_ZIP,DESCRIPTION,BILLING_BILLING_ID,INVENTORY_ITEM_ID) values (4,10,45,15281,'Testing inserts',2,2);
+Insert into BILLING_ITEM (BILLINGITEM_ID,QUANTITY,TOTAL_PRICE,BILLING_ZIP,DESCRIPTION,BILLING_BILLING_ID,INVENTORY_ITEM_ID) values (5,2,2,15281,'Testing inserts',2,3);
+Insert into BILLING_ITEM (BILLINGITEM_ID,QUANTITY,TOTAL_PRICE,BILLING_ZIP,DESCRIPTION,BILLING_BILLING_ID,INVENTORY_ITEM_ID) values (6,5,25,15281,'Testing inserts',4,1);
+Insert into BILLING_ITEM (BILLINGITEM_ID,QUANTITY,TOTAL_PRICE,BILLING_ZIP,DESCRIPTION,BILLING_BILLING_ID,INVENTORY_ITEM_ID) values (7,2,25,15281,'Testing inserts',9,1);
+Insert into BILLING_ITEM (BILLINGITEM_ID,QUANTITY,TOTAL_PRICE,BILLING_ZIP,DESCRIPTION,BILLING_BILLING_ID,INVENTORY_ITEM_ID) values (8,2,45,15281,'Testing inserts',9,2);
+Insert into BILLING_ITEM (BILLINGITEM_ID,QUANTITY,TOTAL_PRICE,BILLING_ZIP,DESCRIPTION,BILLING_BILLING_ID,INVENTORY_ITEM_ID) values (9,5,25,15281,'Testing inserts',8,1);
+Insert into BILLING_ITEM (BILLINGITEM_ID,QUANTITY,TOTAL_PRICE,BILLING_ZIP,DESCRIPTION,BILLING_BILLING_ID,INVENTORY_ITEM_ID) values (10,1,25,15281,'Testing inserts',8,1);
+Insert into BILLING_ITEM (BILLINGITEM_ID,QUANTITY,TOTAL_PRICE,BILLING_ZIP,DESCRIPTION,BILLING_BILLING_ID,INVENTORY_ITEM_ID) values (11,30,45,15281,'Testing inserts',5,2);
+Insert into BILLING_ITEM (BILLINGITEM_ID,QUANTITY,TOTAL_PRICE,BILLING_ZIP,DESCRIPTION,BILLING_BILLING_ID,INVENTORY_ITEM_ID) values (12,2,25,15281,'Testing inserts',5,1);
+
+
+COMMIT;
+
+-- inserting into discounts
+
+insert into discounts values(1, 35, 'A', 1);
+insert into discounts values(2, 30, 'B', 5);
+insert into discounts values(3, 25, 'C', 3);
+insert into discounts values(4, 20, 'D', 8);
+insert into discounts values(5, 15, 'E', 1);
+insert into discounts values(6, 10, 'F', 2);
+insert into discounts values(7, 5, 'G', 9);
+
+COMMIT;
+
+-- insert into coolers
+
+insert into coolers values(COOLER_ID_SEQ.NEXTVAL, 'N');
+insert into coolers values(COOLER_ID_SEQ.NEXTVAL, 'N');
+insert into coolers values(COOLER_ID_SEQ.NEXTVAL, 'N');
+insert into coolers values(COOLER_ID_SEQ.NEXTVAL, 'N');
+insert into coolers values(COOLER_ID_SEQ.NEXTVAL, 'N');
+insert into coolers values(COOLER_ID_SEQ.NEXTVAL, 'N');
+insert into coolers values(COOLER_ID_SEQ.NEXTVAL, 'N');
+insert into coolers values(COOLER_ID_SEQ.NEXTVAL, 'N');
+insert into coolers values(COOLER_ID_SEQ.NEXTVAL, 'N');
+insert into coolers values(COOLER_ID_SEQ.NEXTVAL, 'N');
+
+COMMIT;
+
+-- insert into rentals
+
+insert into rentals values(rental_id_seq.NEXTVAL,'25-FEB-22','26-FEB-23',500,'NO',1,1);
+insert into rentals values(rental_id_seq.NEXTVAL,'25-FEB-22','25-FEB-23',500,'NO',4,2);
+insert into rentals values(rental_id_seq.NEXTVAL,'25-FEB-22','25-FEB-23',0,'YES',6,3);
+insert into rentals values(rental_id_seq.NEXTVAL,'25-FEB-22','25-FEB-23',500,'NO',3,4);
+insert into rentals values(rental_id_seq.NEXTVAL,'22-JAN-22','22-JAN-23',0,'YES',4,5);
+insert into rentals values(rental_id_seq.NEXTVAL,'25-FEB-22','25-FEB-23',0,'YES',5,6);
+insert into rentals values(rental_id_seq.NEXTVAL,'25-FEB-22','25-FEB-23',0,'YES',6,7);
+insert into rentals values(rental_id_seq.NEXTVAL,'10-JAN-22','10-JAN-23',500,'NO',1,1);
+insert into rentals values(rental_id_seq.NEXTVAL,'03-JAN-22','03-JAN-23',500,'NO',3,3);
+insert into rentals values(rental_id_seq.NEXTVAL,'10-DEC-21','10-DEC-22',500,'NO',2,4);
+
+COMMIT;
+
+-- insert into contracts
+
+insert into contracts values(11,'31-DEC-21','01-JAN-22','31-DEC-22','Transfer',1,104, 'Sammie', 'Worth', 'Heinz College', 15213);
+insert into contracts values(12,'20-DEC-21','01-JAN-22','31-DEC-22','Transfer',2,104, 'Sammie', 'Worth', 'CMU SCS', 15213);
+insert into contracts values(13,'25-DEC-21','01-JAN-22','31-DEC-22','Transfer',3,104, 'Sammie', 'Worth', 'College of Fine Arts', 15213);
+insert into contracts values(14,'30-DEC-21','01-JAN-22','31-DEC-22','Transfer',4,104, 'Sammie', 'Worth', 'Apple Shadyside', 15232);
+insert into contracts values(15,'12-NOV-21','01-JAN-22','31-DEC-22','Transfer',5,104, 'Sammie', 'Worth', 'Chatham University', 15232);
+insert into contracts values(16,'31-DEC-21','01-JAN-22','31-DEC-22','Transfer',6,105, 'Bear', 'Jonas', 'UPMC Shadyside', 15232);
+insert into contracts values(17,'29-NOV-21','01-JAN-22','31-DEC-22','Transfer',7,105, 'Bear', 'Jonas', 'St Edmund Academy', 15217);
+insert into contracts values(18,'31-OCT-21','01-JAN-22','31-DEC-22','Transfer',8,105, 'Bear', 'Jonas', 'Congregation Beth Shalom', 15217);
+insert into contracts values(19,'31-OCT-21','01-JAN-22','31-DEC-22','Transfer',9,105, 'Bear', 'Jonas', 'School House Yoga', 15217);
+insert into contracts values(20,'01-DEC-20','01-JAN-21','31-DEC-21','Transfer',10,105, 'Bear', 'Jonas', 'Jerrys Record', 15217);
+
+COMMIT;
