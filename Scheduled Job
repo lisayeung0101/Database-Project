@@ -1,0 +1,28 @@
+/*Scheduled Job */
+
+BEGIN
+dbms_scheduler.create_job (
+job_name => 'update_inventory_by_hour',
+job_type => 'PLSQL_BLOCK',
+job_action => 'BEGIN
+CALL update_inventory();
+END;',
+start_date => SYSTIMESTAMP,
+enabled => true,
+repeat_interval => 'FREQ=HOURLY');
+END;
+
+create or replace PROCEDURE schedule_job(FREQ VARCHAR2)
+AS
+    
+BEGIN
+dbms_scheduler.create_job (
+    job_name => 'update_emp_evaluation',
+    job_type => 'PLSQL_BLOCK',
+    job_action => 'BEGIN
+    CALL run_emp_eval_for_all_drivers();
+    END;',
+    start_date => SYSTIMESTAMP,
+    enabled => true,
+    repeat_interval => 'FREQ=' || FREQ);
+END;
